@@ -1,0 +1,26 @@
+# Flutter
+.dart_tool/
+.packages
+.pub/
+build/
+
+# Android Studio
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# Firebase
+android/app/google-services.json
+
+# Generated
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
