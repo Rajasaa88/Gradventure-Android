@@ -10,6 +10,19 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final AuthService authService = AuthService();
+
+  final TextEditingController namaController =
+      TextEditingController();
+
+  final TextEditingController nimController =
+      TextEditingController();
+
+  final TextEditingController prodiController =
+      TextEditingController();
+
+  final TextEditingController angkatanController =
+      TextEditingController();
 
   final TextEditingController emailController =
       TextEditingController();
@@ -17,117 +30,177 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController passwordController =
       TextEditingController();
 
-  final AuthService authService = AuthService();
-
   bool isLoading = false;
 
-  void register() async {
+  Future<void> register() async {
+    if (namaController.text.trim().isEmpty ||
+        nimController.text.trim().isEmpty ||
+        prodiController.text.trim().isEmpty ||
+        angkatanController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Semua field wajib diisi"),
+        ),
+      );
+      return;
+    }
 
     setState(() {
       isLoading = true;
     });
 
-    String? result = await authService.register(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
+    print("REGISTER START");
 
-    setState(() {
-      isLoading = false;
-    });
-
-    if (result == null) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Register Success'),
-        ),
+    try {
+      String? result = await authService.register(
+        nama: namaController.text.trim(),
+        nim: nimController.text.trim(),
+        prodi: prodiController.text.trim(),
+        angkatan: angkatanController.text.trim(),
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        ),
-      );
+      print("REGISTER RESULT : $result");
 
-    } else {
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Register Success"),
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LoginPage(),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result),
+          ),
+        );
+      }
+    } catch (e) {
+      print("REGISTER ERROR : $e");
+
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result),
+          content: Text(e.toString()),
         ),
       );
-
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  void dispose() {
+    namaController.dispose();
+    nimController.dispose();
+    prodiController.dispose();
+    angkatanController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
+  Widget buildTextField({
+    required TextEditingController controller,
+    required String label,
+    bool obscureText = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Register'),
+        title: const Text("Register"),
       ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-
-          children: [
-
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              buildTextField(
+                controller: namaController,
+                label: "Nama Lengkap",
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
+              buildTextField(
+                controller: nimController,
+                label: "NIM",
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-
-              child: ElevatedButton(
-                onPressed: isLoading ? null : register,
-
-                child: isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Register'),
+              buildTextField(
+                controller: prodiController,
+                label: "Program Studi",
               ),
-            ),
-
-            TextButton(
-              onPressed: () {
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LoginPage(),
-                  ),
-                );
-
-              },
-
-              child: const Text(
-                'Already have an account? Login',
+              buildTextField(
+                controller: angkatanController,
+                label: "Angkatan",
               ),
-            ),
-          ],
+              buildTextField(
+                controller: emailController,
+                label: "Email",
+              ),
+              buildTextField(
+                controller: passwordController,
+                label: "Password",
+                obscureText: true,
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed:
+                      isLoading ? null : register,
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text("Register"),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const LoginPage(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  "Already have an account? Login",
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
