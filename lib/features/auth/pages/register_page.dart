@@ -11,26 +11,15 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final AuthService authService = AuthService();
-
-  final TextEditingController namaController =
-      TextEditingController();
-
-  final TextEditingController nimController =
-      TextEditingController();
-
-  final TextEditingController prodiController =
-      TextEditingController();
-
-  final TextEditingController angkatanController =
-      TextEditingController();
-
-  final TextEditingController emailController =
-      TextEditingController();
-
-  final TextEditingController passwordController =
-      TextEditingController();
-
+  final TextEditingController namaController = TextEditingController();
+  final TextEditingController nimController = TextEditingController();
+  final TextEditingController prodiController = TextEditingController();
+  final TextEditingController angkatanController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  
   bool isLoading = false;
+  bool isPasswordHidden = true;
 
   Future<void> register() async {
     if (namaController.text.trim().isEmpty ||
@@ -41,7 +30,9 @@ class _RegisterPageState extends State<RegisterPage> {
         passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Semua field wajib diisi"),
+          content: Text("Semua kolom wajib diisi ya!"),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -50,8 +41,6 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       isLoading = true;
     });
-
-    print("REGISTER START");
 
     try {
       String? result = await authService.register(
@@ -63,8 +52,6 @@ class _RegisterPageState extends State<RegisterPage> {
         password: passwordController.text.trim(),
       );
 
-      print("REGISTER RESULT : $result");
-
       if (!mounted) return;
 
       setState(() {
@@ -74,7 +61,9 @@ class _RegisterPageState extends State<RegisterPage> {
       if (result == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Register Success"),
+            content: Text("Pendaftaran Berhasil! Silakan Login."),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
           ),
         );
 
@@ -88,21 +77,21 @@ class _RegisterPageState extends State<RegisterPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } catch (e) {
-      print("REGISTER ERROR : $e");
-
       if (!mounted) return;
-
       setState(() {
         isLoading = false;
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -119,19 +108,49 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  Widget buildTextField({
+  // Widget khusus biar kodingan TextField nggak kepanjangan
+  Widget buildCustomTextField({
     required TextEditingController controller,
     required String label,
-    bool obscureText = false,
+    required IconData icon,
+    bool isPassword = false,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
         controller: controller,
-        obscureText: obscureText,
+        obscureText: isPassword ? isPasswordHidden : false,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
+          prefixIcon: Icon(icon, color: const Color(0xFF2B5CFA)),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    isPasswordHidden ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      isPasswordHidden = !isPasswordHidden;
+                    });
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF2B5CFA), width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade50,
         ),
       ),
     );
@@ -140,65 +159,139 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Register"),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+            );
+          },
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              buildTextField(
+              // Logo yang diperkecil buat header register
+              Image.asset(
+                'assets/images/logo2.png',
+                height: 80,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Buat Akun Baru",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2B5CFA),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Lengkapi data dirimu di bawah ini.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 30),
+
+              buildCustomTextField(
                 controller: namaController,
                 label: "Nama Lengkap",
+                icon: Icons.person_outline,
               ),
-              buildTextField(
+              buildCustomTextField(
                 controller: nimController,
                 label: "NIM",
+                icon: Icons.badge_outlined,
               ),
-              buildTextField(
+              buildCustomTextField(
                 controller: prodiController,
                 label: "Program Studi",
+                icon: Icons.school_outlined,
               ),
-              buildTextField(
+              buildCustomTextField(
                 controller: angkatanController,
-                label: "Angkatan",
+                label: "Angkatan (Contoh: 2021)",
+                icon: Icons.date_range_outlined,
+                keyboardType: TextInputType.number,
               ),
-              buildTextField(
+              buildCustomTextField(
                 controller: emailController,
                 label: "Email",
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
               ),
-              buildTextField(
+              buildCustomTextField(
                 controller: passwordController,
                 label: "Password",
-                obscureText: true,
+                icon: Icons.lock_outline,
+                isPassword: true,
+              ),
+              
+              const SizedBox(height: 10),
+              
+              ElevatedButton(
+                onPressed: isLoading ? null : register,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2B5CFA),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 3,
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        "Daftar",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed:
-                      isLoading ? null : register,
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text("Register"),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const LoginPage(),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Sudah punya akun? ",
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LoginPage(),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFFF9800), // Warna oranye logo
                     ),
-                  );
-                },
-                child: const Text(
-                  "Already have an account? Login",
-                ),
+                    child: const Text(
+                      "Login di sini",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
