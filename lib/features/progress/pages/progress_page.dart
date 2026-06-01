@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProgressPage extends StatelessWidget {
+  const ProgressPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profil Mahasiswa"),
+        title: const Text("Progress Studi"),
       ),
       body: const Center(
         child: Text(
-          "Profil Mahasiswa\n(Coming Soon)",
+          "Progress Studi\n(Coming Soon)",
           textAlign: TextAlign.center,
         ),
       ),

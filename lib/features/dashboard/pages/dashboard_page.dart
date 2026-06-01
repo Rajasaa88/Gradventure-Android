@@ -4,6 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../auth/pages/login_page.dart';
 import '../../courses/pages/course_page.dart';
+import '../../progress/pages/progress_page.dart';
+import '../../roadmap/pages/roadmap_page.dart';
+import '../../recommendation/pages/recommendation_page.dart';
+import '../../consultation/pages/consultation_page.dart';
+import '../../profile/pages/profile_page.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -41,6 +46,44 @@ class DashboardPage extends StatelessWidget {
   }
 
   return totalSKS;
+}
+
+Widget _menuCard(
+  BuildContext context,
+  String title,
+  IconData icon,
+  Widget page,
+) {
+  return Card(
+    elevation: 3,
+    child: InkWell(
+      borderRadius:
+          BorderRadius.circular(12),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => page,
+          ),
+        );
+      },
+      child: Column(
+        mainAxisAlignment:
+            MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 40,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
   @override
@@ -199,61 +242,69 @@ class DashboardPage extends StatelessWidget {
 ),
                 const SizedBox(height: 30),
 
-                const Text(
-                  "Menu",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+               const Text(
+  "Menu Utama",
+  style: TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+  ),
+),
 
-                const SizedBox(height: 15),
+const SizedBox(height: 15),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.menu_book),
-                    label: const Text(
-                      "Daftar Mata Kuliah",
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const CoursePage(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+GridView.count(
+  shrinkWrap: true,
+  physics:
+      const NeverScrollableScrollPhysics(),
+  crossAxisCount: 2,
+  crossAxisSpacing: 12,
+  mainAxisSpacing: 12,
+  childAspectRatio: 1.2,
+  children: [
 
-                const SizedBox(height: 15),
+    _menuCard(
+      context,
+      "Mata Kuliah",
+      Icons.menu_book,
+      const CoursePage(),
+    ),
 
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(
-                      Icons.school,
-                    ),
-                    label: const Text(
-                      "Progress Studi",
-                    ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            "Fitur akan dibuat pada Sprint berikutnya",
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+    _menuCard(
+      context,
+      "Progress",
+      Icons.school,
+      const ProgressPage(),
+    ),
+
+    _menuCard(
+      context,
+      "Roadmap",
+      Icons.route,
+      const RoadmapPage(),
+    ),
+
+    _menuCard(
+      context,
+      "Rekomendasi",
+      Icons.lightbulb,
+      const RecommendationPage(),
+    ),
+
+    _menuCard(
+      context,
+      "Konsultasi",
+      Icons.forum,
+      const ConsultationPage(),
+    ),
+
+    _menuCard(
+      context,
+      "Profil",
+      Icons.person,
+      const ProfilePage(),
+    ),
+  ],
+)
               ],
             ),
           );
