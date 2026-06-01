@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // 1. Tambahin import ini
 
 import 'firebase_options.dart';
-
 import 'features/auth/pages/login_page.dart';
 
 void main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const GradventureApp());
+  // 2. Bungkus app lo pake ProviderScope biar Riverpod-nya nyala
+  runApp(const ProviderScope(child: GradventureApp())); 
 }
 
 class GradventureApp extends StatelessWidget {
@@ -21,11 +21,11 @@ class GradventureApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    return MaterialApp(
+    // 3. Sementara pake MaterialApp biasa gapapa, nanti kita ubah jadi MaterialApp.router
+    return const MaterialApp( 
       debugShowCheckedModeBanner: false,
       title: 'Gradventure',
-      home: const LoginPage(),
+      home: LoginPage(),
     );
   }
 }
