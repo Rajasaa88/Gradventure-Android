@@ -19,6 +19,30 @@ class DashboardPage extends StatelessWidget {
     return doc.data() as Map<String, dynamic>?;
   }
 
+  Future<int> getTotalSKSLulus() async {
+  String uid =
+      FirebaseAuth.instance.currentUser!.uid;
+
+  QuerySnapshot snapshot =
+      await FirebaseFirestore.instance
+          .collection('student_courses')
+          .doc(uid)
+          .collection('courses')
+          .get();
+
+  int totalSKS = 0;
+
+  for (var doc in snapshot.docs) {
+    final data =
+        doc.data() as Map<String, dynamic>;
+
+    totalSKS +=
+        (data['sks'] ?? 0) as int;
+  }
+
+  return totalSKS;
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,32 +126,77 @@ class DashboardPage extends StatelessWidget {
 
                 const SizedBox(height: 25),
 
-                const Card(
-                  elevation: 3,
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Text(
-                          "Progress Studi",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          "SKS Lulus : 0",
-                        ),
-                        Text(
-                          "Target : 144 SKS",
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                FutureBuilder<int>(
+  future: getTotalSKSLulus(),
+  builder: (context, sksSnapshot) {
 
+    if (!sksSnapshot.hasData) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child:
+                CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    int sksLulus =
+        sksSnapshot.data ?? 0;
+
+    double progress =
+        sksLulus / 144;
+
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding:
+            const EdgeInsets.all(16),
+        child: Column(
+          children: [
+
+            const Text(
+              "Progress Studi",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Text(
+              "SKS Lulus : $sksLulus",
+              style: const TextStyle(
+                fontSize: 16,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
+            const Text(
+              "Target : 144 SKS",
+            ),
+
+            const SizedBox(height: 10),
+
+            LinearProgressIndicator(
+              value: progress,
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              "${(progress * 100).toStringAsFixed(1)} %",
+            ),
+          ],
+        ),
+      ),
+    );
+  },
+),
                 const SizedBox(height: 30),
 
                 const Text(
