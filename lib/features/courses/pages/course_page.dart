@@ -13,11 +13,18 @@ class _CoursePageState extends State<CoursePage> {
   final String uid = FirebaseAuth.instance.currentUser!.uid;
   int selectedSemester = 1;
 
-  final List<String> gradeOptions = ['A', 'B+', 'B', 'C+', 'C', 'D', 'E', 'Belum Diambil'];
+  final List<String> gradeOptions = ['A', 'B+', 'B', 'C+', 'C', 'D', 'E', 'Sedang Ditempuh', 'Belum Diambil'];
 
   // --- FUNGSI UPDATE NILAI KE FIRESTORE PRIBADI ---
   Future<void> _updateGrade(String courseId, Map<String, dynamic> masterData, String newGrade) async {
-    String newStatus = (newGrade == 'Belum Diambil' || newGrade == 'E') ? 'Belum Diambil' : 'Lulus';
+    String newStatus;
+    if (newGrade == 'Belum Diambil' || newGrade == 'E') {
+      newStatus = 'Belum Diambil';
+    } else if (newGrade == 'Sedang Ditempuh') {
+      newStatus = 'Sedang Ditempuh'; // <-- Status baru masuk sini
+    } else {
+      newStatus = 'Lulus';
+    }
 
     try {
       // Kita pake .set() dengan merge: true. 
