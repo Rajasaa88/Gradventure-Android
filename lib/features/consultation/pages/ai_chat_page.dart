@@ -45,6 +45,74 @@ class _AiChatPageState extends State<AiChatPage> {
     }
   }
 
+  List<InlineSpan> _parseMarkdown(String text, bool isUser) {
+    final List<InlineSpan> spans = [];
+    final color = isUser ? Colors.white : const Color(0xFF2D3142);
+    final RegExp regExp = RegExp(
+      r'(\*\*(.*?)\*\*)|(\*(.*?)\*)|(_(.*?)_)|(`(.*?)`)',
+      dotAll: true,
+    );
+    int start = 0;
+    for (final Match match in regExp.allMatches(text)) {
+      if (match.start > start) {
+        spans.add(TextSpan(
+          text: text.substring(start, match.start),
+          style: TextStyle(color: color, height: 1.4, fontSize: 14),
+        ));
+      }
+      if (match.group(1) != null) {
+        spans.add(TextSpan(
+          text: match.group(2),
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            height: 1.4,
+            fontSize: 14,
+          ),
+        ));
+      } else if (match.group(3) != null) {
+        spans.add(TextSpan(
+          text: match.group(4),
+          style: TextStyle(
+            color: color,
+            fontStyle: FontStyle.italic,
+            height: 1.4,
+            fontSize: 14,
+          ),
+        ));
+      } else if (match.group(5) != null) {
+        spans.add(TextSpan(
+          text: match.group(6),
+          style: TextStyle(
+            color: color,
+            decoration: TextDecoration.underline,
+            height: 1.4,
+            fontSize: 14,
+          ),
+        ));
+      } else if (match.group(7) != null) {
+        spans.add(TextSpan(
+          text: match.group(8),
+          style: TextStyle(
+            color: isUser ? Colors.white : Colors.pinkAccent,
+            fontFamily: 'monospace',
+            backgroundColor: isUser ? Colors.white.withOpacity(0.2) : Colors.grey.shade100,
+            height: 1.4,
+            fontSize: 13,
+          ),
+        ));
+      }
+      start = match.end;
+    }
+    if (start < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(start),
+        style: TextStyle(color: color, height: 1.4, fontSize: 14),
+      ));
+    }
+    return spans;
+  }
+
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -128,7 +196,7 @@ class _AiChatPageState extends State<AiChatPage> {
         actions: [
           Builder(
             builder: (context) => IconButton(
-              icon: const Icon(Icons.history_rounded, color: Color(0xFF2B5CFA)),
+              icon: const Icon(Icons.menu_rounded, color: Color(0xFF2B5CFA)),
               onPressed: () => Scaffold.of(context).openEndDrawer(),
               tooltip: 'Riwayat Chat',
             ),
@@ -434,19 +502,6 @@ class _AiChatPageState extends State<AiChatPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!isUser) ...[
-                  // AI Avatar
-                  Container(
-                    margin: const EdgeInsets.only(right: 10),
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2B5CFA).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF2B5CFA), size: 18),
-                  ),
-                ],
-                
                 Flexible(
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -469,31 +524,14 @@ class _AiChatPageState extends State<AiChatPage> {
                               )
                             ],
                     ),
-                    child: Text(
-                      message.text,
-                      style: TextStyle(
-                        color: isUser ? Colors.white : const Color(0xFF2D3142),
-                        height: 1.4,
-                        fontSize: 14,
+                    child: RichText(
+                      textAlign: TextAlign.justify,
+                      text: TextSpan(
+                        children: _parseMarkdown(message.text, isUser),
                       ),
                     ),
                   ),
                 ),
-
-                if (isUser) ...[
-                  // User Avatar
-                  Container(
-                    margin: const EdgeInsets.only(left: 10),
-                    child: CircleAvatar(
-                      radius: 15,
-                      backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
-                      child: Text(
-                        initial,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA)),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -512,15 +550,6 @@ class _AiChatPageState extends State<AiChatPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2B5CFA).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF2B5CFA), size: 18),
-            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
