@@ -51,8 +51,8 @@ class AiChatController extends ChangeNotifier {
     return _firestore
         .collection('users')
         .doc(_uid)
-        .collection('ai_chats')
-        .orderBy('timestamp', descending: true)
+        .collection('chat_sessions')
+        .orderBy('tanggal_diperbarui', descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) => AiChatSession.fromFirestore(doc)).toList();
@@ -77,7 +77,7 @@ class AiChatController extends ChangeNotifier {
       final doc = await _firestore
           .collection('users')
           .doc(_uid)
-          .collection('ai_chats')
+          .collection('chat_sessions')
           .doc(sessionId)
           .get();
 
@@ -101,7 +101,7 @@ class AiChatController extends ChangeNotifier {
       await _firestore
           .collection('users')
           .doc(_uid)
-          .collection('ai_chats')
+          .collection('chat_sessions')
           .doc(sessionId)
           .delete();
       
@@ -336,13 +336,13 @@ class AiChatController extends ChangeNotifier {
     if (_uid.isEmpty || _messages.isEmpty) return;
 
     try {
-      final title = _messages.first.text.length > 40
-          ? '${_messages.first.text.substring(0, 40)}...'
+      final title = _messages.first.text.length > 20
+          ? '${_messages.first.text.substring(0, 20)}...'
           : _messages.first.text;
 
       final sessionData = {
-        'title': title,
-        'timestamp': FieldValue.serverTimestamp(),
+        'judul_sesi': title,
+        'tanggal_diperbarui': FieldValue.serverTimestamp(),
         'messages': _messages.map((m) => m.toMap()).toList(),
       };
 
@@ -351,7 +351,7 @@ class AiChatController extends ChangeNotifier {
         final docRef = await _firestore
             .collection('users')
             .doc(_uid)
-            .collection('ai_chats')
+            .collection('chat_sessions')
             .add(sessionData);
         _currentSessionId = docRef.id;
       } else {
@@ -359,7 +359,7 @@ class AiChatController extends ChangeNotifier {
         await _firestore
             .collection('users')
             .doc(_uid)
-            .collection('ai_chats')
+            .collection('chat_sessions')
             .doc(_currentSessionId)
             .set(sessionData, SetOptions(merge: true));
       }

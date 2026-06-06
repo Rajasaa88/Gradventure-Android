@@ -102,12 +102,10 @@ class _AiChatPageState extends State<AiChatPage> {
         foregroundColor: const Color(0xFF2D3142),
         elevation: 0,
         centerTitle: true,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Color(0xFF2D3142)),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Riwayat Chat',
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF2D3142)),
+          onPressed: () => Navigator.pop(context),
+          tooltip: 'Kembali',
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -128,24 +126,18 @@ class _AiChatPageState extends State<AiChatPage> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_comment_rounded, color: Color(0xFF2B5CFA)),
-            onPressed: () {
-              _controller.startNewChat();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Sesi chat baru dimulai 🆕"),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-            },
-            tooltip: 'Chat Baru',
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.history_rounded, color: Color(0xFF2B5CFA)),
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+              tooltip: 'Riwayat Chat',
+            ),
           ),
         ],
       ),
 
       // --- HISTORY DRAWER ---
-      drawer: Drawer(
+      endDrawer: Drawer(
         backgroundColor: Colors.white,
         child: Column(
           children: [
@@ -265,7 +257,7 @@ class _AiChatPageState extends State<AiChatPage> {
                             size: 18,
                           ),
                           title: Text(
-                            session.title,
+                            session.judulSesi,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(

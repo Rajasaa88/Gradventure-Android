@@ -13,10 +13,10 @@ class AiChatMessage {
 
   factory AiChatMessage.fromMap(Map<String, dynamic> map) {
     DateTime time;
-    if (map['timestamp'] is Timestamp) {
-      time = (map['timestamp'] as Timestamp).toDate();
-    } else if (map['timestamp'] is String) {
-      time = DateTime.tryParse(map['timestamp']) ?? DateTime.now();
+    if (map['waktu'] is Timestamp) {
+      time = (map['waktu'] as Timestamp).toDate();
+    } else if (map['waktu'] is String) {
+      time = DateTime.tryParse(map['waktu']) ?? DateTime.now();
     } else {
       time = DateTime.now();
     }
@@ -32,21 +32,21 @@ class AiChatMessage {
     return {
       'role': role,
       'text': text,
-      'timestamp': Timestamp.fromDate(timestamp),
+      'waktu': Timestamp.fromDate(timestamp),
     };
   }
 }
 
 class AiChatSession {
   final String id;
-  final String title;
-  final DateTime timestamp;
+  final String judulSesi;
+  final DateTime tanggalDiperbarui;
   final List<AiChatMessage> messages;
 
   AiChatSession({
     required this.id,
-    required this.title,
-    required this.timestamp,
+    required this.judulSesi,
+    required this.tanggalDiperbarui,
     required this.messages,
   });
 
@@ -54,8 +54,8 @@ class AiChatSession {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     
     DateTime time;
-    if (data['timestamp'] is Timestamp) {
-      time = (data['timestamp'] as Timestamp).toDate();
+    if (data['tanggal_diperbarui'] is Timestamp) {
+      time = (data['tanggal_diperbarui'] as Timestamp).toDate();
     } else {
       time = DateTime.now();
     }
@@ -67,16 +67,16 @@ class AiChatSession {
 
     return AiChatSession(
       id: doc.id,
-      title: data['title'] ?? 'Percakapan Baru',
-      timestamp: time,
+      judulSesi: data['judul_sesi'] ?? 'Percakapan Baru',
+      tanggalDiperbarui: time,
       messages: msgs,
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'title': title,
-      'timestamp': Timestamp.fromDate(timestamp),
+      'judul_sesi': judulSesi,
+      'tanggal_diperbarui': Timestamp.fromDate(tanggalDiperbarui),
       'messages': messages.map((m) => m.toMap()).toList(),
     };
   }
