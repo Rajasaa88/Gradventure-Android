@@ -148,47 +148,88 @@ class _ConsultationPageState extends State<ConsultationPage> {
   }
 
   // --- TAB 1: MOCKUP CHAT AI ---
+  final TextEditingController _aiChatController = TextEditingController();
+  final List<Map<String, dynamic>> _messages = [
+    {
+      'isUser': false,
+      'text': "Halo! Gue asisten AI Gradventure. Ada yang mau diomongin soal KRS, milih matkul, atau keluh kesah tugas numpuk?"
+    },
+  ];
+
+  void _sendMessage() {
+    if (_aiChatController.text.trim().isEmpty) return;
+
+    setState(() {
+      _messages.add({
+        'isUser': true,
+        'text': _aiChatController.text.trim(),
+      });
+    });
+
+    String query = _aiChatController.text.toLowerCase();
+    _aiChatController.clear();
+
+    // Simulasi delay AI mikir
+    Future.delayed(const Duration(seconds: 1), () {
+      String response = "Wah, pertanyaan menarik. Gue lagi belajar nih buat jawab itu lebih detail. Tapi intinya, tetep semangat ya!";
+      
+      if (query.contains("krs")) {
+        response = "Buat KRS-an, pastiin lo cek 'Rekomendasi Matkul' dulu. Di situ udah diitungin matkul apa yang pas sesuai IPK lo.";
+      } else if (query.contains("ipk")) {
+        response = "Mau naikin IPK? Coba cek tab 'Progress Studi'. Kalo ada matkul dapet C atau D, mending diulang biar IPK-nya gacor lagi.";
+      } else if (query.contains("lulus")) {
+        response = "Mau cepet lulus? Cek 'Roadmap Kelulusan'. Di situ lo bisa liat berapa matkul lagi yang harus lo kelarin.";
+      }
+
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            'isUser': false,
+            'text': response,
+          });
+        });
+      }
+    });
+  }
+
   Widget _buildAITab() {
     return Column(
       children: [
         Expanded(
-          child: ListView(
+          child: ListView.builder(
             padding: const EdgeInsets.all(20),
-            children: [
-              // Chat dari AI
-              Align(
-                alignment: Alignment.centerLeft,
+            itemCount: _messages.length,
+            itemBuilder: (context, index) {
+              final msg = _messages[index];
+              final bool isUser = msg['isUser'];
+
+              return Align(
+                alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  margin: const EdgeInsets.only(bottom: 16, right: 40),
+                  margin: EdgeInsets.only(
+                    bottom: 16,
+                    left: isUser ? 40 : 0,
+                    right: isUser ? 0 : 40,
+                  ),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20), bottomRight: Radius.circular(20)),
-                    border: Border.all(color: Colors.grey.shade200),
+                    color: isUser ? const Color(0xFF2B5CFA) : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: isUser ? const Radius.circular(20) : Radius.zero,
+                      bottomRight: isUser ? Radius.zero : const Radius.circular(20),
+                    ),
+                    border: isUser ? null : Border.all(color: Colors.grey.shade200),
+                    boxShadow: isUser ? null : [BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 5)],
                   ),
-                  child: const Text(
-                    "Halo! Gue asisten AI Gradventure. Ada yang mau diomongin soal KRS, milih matkul, atau keluh kesah tugas numpuk?",
-                    style: TextStyle(color: Color(0xFF2D3142), height: 1.4),
-                  ),
-                ),
-              ),
-              // Chat dari User (Dummy)
-              Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 16, left: 40),
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2B5CFA),
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20), bottomLeft: Radius.circular(20)),
-                  ),
-                  child: const Text(
-                    "Mending ambil matkul apaan ya buat perbaikan IPK?",
-                    style: TextStyle(color: Colors.white, height: 1.4),
+                  child: Text(
+                    msg['text'],
+                    style: TextStyle(color: isUser ? Colors.white : const Color(0xFF2D3142), height: 1.4),
                   ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
         // Input Box AI
@@ -196,12 +237,14 @@ class _ConsultationPageState extends State<ConsultationPage> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -4))],
+            boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -4))],
           ),
           child: Row(
             children: [
               Expanded(
                 child: TextField(
+                  controller: _aiChatController,
+                  onSubmitted: (_) => _sendMessage(),
                   decoration: InputDecoration(
                     hintText: "Tanya AI...",
                     hintStyle: TextStyle(color: Colors.grey.shade400),
@@ -218,9 +261,7 @@ class _ConsultationPageState extends State<ConsultationPage> {
                 radius: 24,
                 child: IconButton(
                   icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur AI segera hadir! 🤖")));
-                  },
+                  onPressed: _sendMessage,
                 ),
               ),
             ],
@@ -271,7 +312,7 @@ class _ConsultationPageState extends State<ConsultationPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                     border: Border.all(color: Colors.grey.shade100),
                   ),
                   child: Padding(

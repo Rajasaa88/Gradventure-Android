@@ -176,7 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
       contentPadding: EdgeInsets.zero,
       leading: Container(
         padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: const Color(0xFF2B5CFA).withOpacity(0.1), shape: BoxShape.circle),
+        decoration: BoxDecoration(color: const Color(0xFF2B5CFA).withValues(alpha: 0.1), shape: BoxShape.circle),
         child: Icon(icon, color: const Color(0xFF2B5CFA)),
       ),
       title: Text(title, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
@@ -220,7 +220,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           // --- FIX DISPLAY AVATAR DARI BASE64 TEXT ---
                           CircleAvatar(
                             radius: 50,
-                            backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
+                            backgroundColor: const Color(0xFF2B5CFA).withValues(alpha: 0.1),
                             // Kalo ada data string base64, kita decode balik jadi image memory
                             backgroundImage: photoUrl != null 
                                 ? MemoryImage(base64Decode(photoUrl)) 

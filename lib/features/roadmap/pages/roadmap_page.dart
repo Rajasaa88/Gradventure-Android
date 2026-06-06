@@ -61,7 +61,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
 
       return roadmapData;
     } catch (e) {
-      print("Error fetching roadmap: $e");
+      debugPrint("Error fetching roadmap: $e");
       return {};
     }
   }
@@ -121,7 +121,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
                   border: Border.all(color: isCompleted || isOnProgress ? cardColor : Colors.grey.shade200, width: 2),
                   boxShadow: [
                     if (isCompleted || isOnProgress) 
-                      BoxShadow(color: cardColor.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+                      BoxShadow(color: cardColor.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))
                   ],
                 ),
                 child: Theme(
@@ -135,7 +135,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.2) : const Color(0xFFF4F6F9),
+                            color: isCompleted || isOnProgress ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFF4F6F9),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -159,7 +159,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
                                 style: TextStyle(
                                   fontSize: 12, 
                                   fontWeight: FontWeight.w600,
-                                  color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.8) : Colors.grey.shade500,
+                                  color: isCompleted || isOnProgress ? Colors.white.withValues(alpha: 0.8) : Colors.grey.shade500,
                                 ),
                               ),
                             ],

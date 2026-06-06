@@ -47,7 +47,7 @@ class DashboardPage extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: themeColor.withOpacity(0.08),
+            color: themeColor.withValues(alpha: 0.08),
             blurRadius: 15,
             spreadRadius: 0,
             offset: const Offset(0, 8),
@@ -58,8 +58,8 @@ class DashboardPage extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          splashColor: themeColor.withOpacity(0.1),
-          highlightColor: themeColor.withOpacity(0.05),
+          splashColor: themeColor.withValues(alpha: 0.1),
+          highlightColor: themeColor.withValues(alpha: 0.05),
           onTap: () {
             Navigator.push(
               context,
@@ -75,7 +75,7 @@ class DashboardPage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.15),
+                    color: themeColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(icon, size: 28, color: themeColor),
@@ -176,7 +176,7 @@ class DashboardPage extends StatelessWidget {
                       // --- DYNAMIC AVATAR (BASE64 / INITIAL TEXT) ---
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
+                        backgroundColor: const Color(0xFF2B5CFA).withValues(alpha: 0.1),
                         backgroundImage: photoUrl != null 
                             ? MemoryImage(base64Decode(photoUrl)) 
                             : null,
@@ -258,7 +258,7 @@ class DashboardPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF1E293B).withOpacity(0.3),
+                              color: const Color(0xFF1E293B).withValues(alpha: 0.3),
                               blurRadius: 15,
                               offset: const Offset(0, 8),
                             ),
@@ -275,7 +275,7 @@ class DashboardPage extends StatelessWidget {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 20),
@@ -306,7 +306,7 @@ class DashboardPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(10),
                               child: LinearProgressIndicator(
                                 value: progress,
-                                backgroundColor: Colors.white.withOpacity(0.15),
+                                backgroundColor: Colors.white.withValues(alpha: 0.15),
                                 valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF50E3C2)),
                                 minHeight: 12,
                               ),
@@ -325,7 +325,7 @@ class DashboardPage extends StatelessWidget {
                                 Text(
                                   "144 SKS",
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.6),
+                                    color: Colors.white.withValues(alpha: 0.6),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

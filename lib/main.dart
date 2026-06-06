@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // 1. Tambahin import ini
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options.dart';
 import 'features/auth/pages/login_page.dart';
+import 'features/dashboard/pages/dashboard_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,8 +14,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 2. Bungkus app lo pake ProviderScope biar Riverpod-nya nyala
-  runApp(const ProviderScope(child: GradventureApp())); 
+  runApp(const ProviderScope(child: GradventureApp()));
 }
 
 class GradventureApp extends StatelessWidget {
@@ -21,11 +22,30 @@ class GradventureApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 3. Sementara pake MaterialApp biasa gapapa, nanti kita ubah jadi MaterialApp.router
-    return const MaterialApp( 
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Gradventure',
-      home: LoginPage(),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2B5CFA)),
+        useMaterial3: true,
+        fontFamily: 'Plus Jakarta Sans', // Assuming the font might be added or default sans is used
+      ),
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          if (snapshot.hasData) {
+            return const DashboardPage();
+          }
+          return const LoginPage();
+        },
+      ),
     );
   }
 }

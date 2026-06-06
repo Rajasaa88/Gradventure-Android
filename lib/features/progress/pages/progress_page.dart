@@ -36,7 +36,7 @@ class _ProgressPageState extends State<ProgressPage> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.grey.shade100, width: 2),
         boxShadow: [
-          BoxShadow(color: color.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 8)),
+          BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, 8)),
         ],
       ),
       child: Column(
@@ -46,7 +46,7 @@ class _ProgressPageState extends State<ProgressPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: color, size: 24),
               ),
               const SizedBox(width: 12),
@@ -164,30 +164,30 @@ class _ProgressPageState extends State<ProgressPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [statusColor.withOpacity(0.8), statusColor],
-                      begin: Alignment.topLeft, end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: statusColor.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+                  gradient: LinearGradient(
+                    colors: [statusColor.withValues(alpha: 0.8), statusColor],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: statusColor.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Hak SKS Semester Depan", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                          Icon(Icons.auto_awesome_rounded, color: Colors.white.withOpacity(0.8), size: 20),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(jatahSks, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 8),
-                      Text(pesanSks, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, height: 1.4)),
-                    ],
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Hak SKS Semester Depan", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                        Icon(Icons.auto_awesome_rounded, color: Colors.white.withValues(alpha: 0.8), size: 20),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(jatahSks, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 8),
+                    Text(pesanSks, style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, height: 1.4)),
+                  ],
                   ),
-                ),
+                  ),
                 const SizedBox(height: 32),
 
                 // --- GRAFIK TREN IPS ---
@@ -244,7 +244,7 @@ class _ProgressPageState extends State<ProgressPage> {
                             dotData: const FlDotData(show: true),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: const Color(0xFF2B5CFA).withOpacity(0.1),
+                              color: const Color(0xFF2B5CFA).withValues(alpha: 0.1),
                             ),
                           ),
                         ],
@@ -261,9 +261,9 @@ class _ProgressPageState extends State<ProgressPage> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                     ),
                     child: const Row(
                       children: [
@@ -288,14 +288,14 @@ class _ProgressPageState extends State<ProgressPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-                          border: Border.all(color: Colors.redAccent.withOpacity(0.1)),
+                          boxShadow: [BoxShadow(color: Colors.redAccent.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.1)),
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.1), shape: BoxShape.circle),
                               child: Text(course['nilai'], style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
                             ),
                             const SizedBox(width: 16),
