@@ -282,13 +282,6 @@ class AiChatController extends ChangeNotifier {
           "dan jawab pertanyaan seputar SKS atau IPK mereka secara personal:\n\n"
           "$academicContext";
 
-      // Initialize a dynamic model with updated system instructions containing the context
-      final dynamicModel = GenerativeModel(
-        model: GeminiConfig.modelName,
-        apiKey: GeminiConfig.apiKey,
-        systemInstruction: Content.system(dynamicSystemInstruction),
-      );
-
       // 3. Format history for Google Gemini API
       final List<Content> historyContents = [];
       for (int i = 0; i < _messages.length - 1; i++) {
@@ -302,9 +295,58 @@ class AiChatController extends ChangeNotifier {
         }
       }
 
-      // 4. Request Gemini API
-      final chat = dynamicModel.startChat(history: historyContents);
-      final response = await chat.sendMessage(Content.text(text.trim()));
+      // 4. Request Gemini API with robust retry and fallback mechanism
+      GenerateContentResponse? response;
+      final List<String> modelsToTry = [
+        GeminiConfig.modelName, // 'gemini-2.5-flash'
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+      ];
+
+      for (String model in modelsToTry) {
+        int retryCount = 0;
+        const int maxRetries = 3;
+        int backoffMs = 1000;
+        bool success = false;
+
+        while (retryCount < maxRetries) {
+          try {
+            debugPrint('Trying Gemini API call with model: $model (Attempt ${retryCount + 1}/$maxRetries)');
+            final dynamicModel = GenerativeModel(
+              model: model,
+              apiKey: GeminiConfig.apiKey,
+              systemInstruction: Content.system(dynamicSystemInstruction),
+            );
+            final chat = dynamicModel.startChat(history: historyContents);
+            response = await chat.sendMessage(Content.text(text.trim()));
+            success = true;
+            break; // Success! Break the retry loop
+          } catch (e) {
+            final errStr = e.toString().toLowerCase();
+            // Check if it is a transient server error (503, high demand, unavailable, or rate limit)
+            if (errStr.contains('503') || errStr.contains('demand') || errStr.contains('unavailable') || errStr.contains('quota') || errStr.contains('limit')) {
+              retryCount++;
+              if (retryCount < maxRetries) {
+                debugPrint('Gemini transient error with $model: $e. Retrying in ${backoffMs}ms...');
+                await Future.delayed(Duration(milliseconds: backoffMs));
+                backoffMs *= 2; // Exponential backoff
+                continue;
+              }
+            }
+            debugPrint('Failed to generate content with model $model: $e');
+            break; // Break retry loop to try the next fallback model
+          }
+        }
+
+        if (success && response != null) {
+          break; // Break the outer model loop if successful
+        }
+      }
+
+      if (response == null) {
+        throw Exception("Semua model Gemini sedang mengalami beban tinggi (High Demand). Silakan coba lagi beberapa saat lagi.");
+      }
+
       final responseText = response.text ?? 'Maaf, saya tidak menerima jawaban.';
 
       // 5. Add model message locally

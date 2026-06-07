@@ -24,5 +24,3 @@ android/app/google-services.json
 
 # Windows
 Thumbs.db
-# Secrets
-lib/features/consultation/config/api_key.dart

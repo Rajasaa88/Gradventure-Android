@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../config/gemini_config.dart';
 import '../controllers/ai_chat_controller.dart';
 import '../models/chat_session.dart';
 
