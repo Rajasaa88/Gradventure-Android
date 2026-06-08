@@ -12,13 +12,260 @@ class RoadmapPage extends StatefulWidget {
 
 class _RoadmapPageState extends State<RoadmapPage> {
   final String uid = FirebaseAuth.instance.currentUser!.uid;
+  int _targetSemester = 8;
+  String _statusFilter = 'Semua';
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Filter & Target Roadmap",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Target Semester Kelulusan",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: [6, 7, 8, 9, 10].map((sem) {
+                        bool isSelected = _targetSemester == sem;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            label: Text("Sem $sem"),
+                            selected: isSelected,
+                            selectedColor: const Color(0xFF2B5CFA),
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setModalState(() {
+                                  _targetSemester = sem;
+                                });
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Filter Status Mata Kuliah",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: ['Semua', 'Lulus', 'Belum Lulus'].map((status) {
+                      bool isSelected = _statusFilter == status;
+                      return ChoiceChip(
+                        label: Text(status),
+                        selected: isSelected,
+                        selectedColor: const Color(0xFF2B5CFA),
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        onSelected: (selected) {
+                          if (selected) {
+                            setModalState(() {
+                              _statusFilter = status;
+                            });
+                            setState(() {});
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2B5CFA),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text(
+                        "Terapkan",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAllMilestones(BuildContext context, double currentPercent) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Semua Milestone Kelulusan",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView(
+                  children: [
+                    _buildDetailedMilestoneTile(
+                      Icons.check_rounded,
+                      "100 SKS Terlampaui",
+                      "Syarat utama mengajukan proposal tugas akhir dan kerja praktik.",
+                      true,
+                    ),
+                    const Divider(),
+                    _buildDetailedMilestoneTile(
+                      Icons.check_rounded,
+                      "Kerja Praktik (KP)",
+                      "Penerapan ilmu di dunia profesional / magang industri.",
+                      true,
+                    ),
+                    const Divider(),
+                    _buildDetailedMilestoneTile(
+                      Icons.hourglass_empty_rounded,
+                      "Seminar Proposal (Sempro)",
+                      "Presentasi rencana penelitian tugas akhir / skripsi di depan penguji.",
+                      false,
+                      isWarning: true,
+                    ),
+                    const Divider(),
+                    _buildDetailedMilestoneTile(
+                      Icons.lock_rounded,
+                      "Skripsi / Tugas Akhir",
+                      "Penyusunan laporan akhir penelitian bersama dosen pembimbing.",
+                      false,
+                    ),
+                    const Divider(),
+                    _buildDetailedMilestoneTile(
+                      Icons.lock_rounded,
+                      "Sidang Akhir",
+                      "Ujian akhir kelulusan untuk memperoleh gelar Sarjana.",
+                      false,
+                    ),
+                    const Divider(),
+                    _buildDetailedMilestoneTile(
+                      Icons.lock_rounded,
+                      "Wisuda",
+                      "Pernyataan kelulusan resmi dan wisuda.",
+                      false,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailedMilestoneTile(IconData icon, String title, String description, bool isCompleted, {bool isWarning = false}) {
+    Color bgColor = isCompleted ? const Color(0xFF10B981).withOpacity(0.1) : (isWarning ? const Color(0xFFF59E0B).withOpacity(0.1) : Colors.grey.shade100);
+    Color iconColor = isCompleted ? const Color(0xFF10B981) : (isWarning ? const Color(0xFFF59E0B) : Colors.grey.shade400);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isCompleted ? "Selesai" : (isWarning ? "Siap Diambil" : "Terkunci"),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: iconColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // --- FUNGSI AMBIL & OLAH DATA ROADMAP ---
   Future<Map<String, dynamic>> _getRoadmapData() async {
     Map<int, Map<String, dynamic>> roadmapData = {};
     int sksLulus = 0;
     int currentSemester = 1; // Default
-    int targetSemester = 8; // Default lulus S1
+    int targetSemester = _targetSemester;
     int totalSksTarget = 144;
 
     try {
@@ -102,7 +349,9 @@ class _RoadmapPageState extends State<RoadmapPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.tune_rounded, color: Color(0xFF1E293B)),
-            onPressed: () {},
+            onPressed: () {
+              _showFilterSheet(context);
+            },
           )
         ],
       ),
@@ -234,6 +483,14 @@ class _RoadmapPageState extends State<RoadmapPage> {
                       itemBuilder: (context, index) {
                         int sem = index + 1;
                         var semData = roadmap[sem] ?? {'total_sks': 0, 'lulus_sks': 0, 'courses': []};
+                        var coursesList = (semData['courses'] as List).where((course) {
+                          if (_statusFilter == 'Lulus') {
+                            return course['isLulus'] == true;
+                          } else if (_statusFilter == 'Belum Lulus') {
+                            return course['isLulus'] == false;
+                          }
+                          return true;
+                        }).toList();
                         
                         bool isCompleted = sem < currentSemester;
                         bool isCurrent = sem == currentSemester;
@@ -263,10 +520,9 @@ class _RoadmapPageState extends State<RoadmapPage> {
                         // Ngambil contoh matkul buat subtitle (mirip di mockup)
                         String subtitleStr = "";
                         if (isCurrent || isFuture) {
-                          List courses = semData['courses'];
-                          if (courses.isNotEmpty) {
-                            var sample = courses.take(2).map((c) => c['nama']).join(", ");
-                            subtitleStr = courses.length > 2 ? "$sample, ..." : sample;
+                          if (coursesList.isNotEmpty) {
+                            var sample = coursesList.take(2).map((c) => c['nama']).join(", ");
+                            subtitleStr = coursesList.length > 2 ? "$sample, ..." : sample;
                           }
                         }
 
@@ -329,35 +585,35 @@ class _RoadmapPageState extends State<RoadmapPage> {
                                         ],
                                       ),
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
-                                          child: Column(
-                                            children: (semData['courses'] as List).map<Widget>((course) {
-                                              bool courseLulus = course['isLulus'];
-                                              return Padding(
-                                                padding: const EdgeInsets.only(bottom: 8),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      courseLulus ? Icons.check_circle_rounded : Icons.circle_outlined,
-                                                      color: courseLulus ? const Color(0xFF10B981) : Colors.grey.shade400,
-                                                      size: 16,
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Expanded(
-                                                      child: Text(
-                                                        course['nama'],
-                                                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: courseLulus ? const Color(0xFF1E293B) : Colors.grey.shade600),
+                                          Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
+                                            child: Column(
+                                              children: coursesList.map<Widget>((course) {
+                                                bool courseLulus = course['isLulus'];
+                                                return Padding(
+                                                  padding: const EdgeInsets.only(bottom: 8),
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        courseLulus ? Icons.check_circle_rounded : Icons.circle_outlined,
+                                                        color: courseLulus ? const Color(0xFF10B981) : Colors.grey.shade400,
+                                                        size: 16,
                                                       ),
-                                                    ),
-                                                    Text("${course['sks']} SKS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
-                                                  ],
-                                                ),
-                                              );
-                                            }).toList(),
+                                                      const SizedBox(width: 8),
+                                                      Expanded(
+                                                        child: Text(
+                                                          course['nama'],
+                                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: courseLulus ? const Color(0xFF1E293B) : Colors.grey.shade600),
+                                                        ),
+                                                      ),
+                                                      Text("${course['sks']} SKS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+                                                    ],
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
                                           ),
-                                        ),
                                       ],
                                     ),
                                   ),
@@ -377,7 +633,12 @@ class _RoadmapPageState extends State<RoadmapPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text("Milestone Kelulusan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                    Text("Lihat semua", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade400)),
+                    InkWell(
+                      onTap: () {
+                        _showAllMilestones(context, percent);
+                      },
+                      child: Text("Lihat semua", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade400)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
