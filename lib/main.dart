@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // 1. Tambahin import i
 import 'firebase_options.dart';
 import 'features/auth/pages/login_page.dart';
 import 'features/consultation/config/gemini_config.dart';
+import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,9 @@ void main() async {
 
   // Inisialisasi API key Gemini secara aman
   await GeminiConfig.initialize();
+
+  // Inisialisasi layanan notifikasi lokal
+  await NotificationService().init();
 
   // 2. Bungkus app lo pake ProviderScope biar Riverpod-nya nyala
   runApp(const ProviderScope(child: GradventureApp())); 
