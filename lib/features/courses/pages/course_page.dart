@@ -161,7 +161,7 @@ class _CoursePageState extends State<CoursePage> {
                           color: isSelected ? const Color(0xFF2B5CFA) : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: isSelected ? const Color(0xFF2B5CFA) : Colors.grey.shade300, width: 1.5),
-                          boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF2B5CFA).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                          boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF2B5CFA).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
                         ),
                         child: Text(
                           "Semester $sem",
@@ -236,7 +236,7 @@ class _CoursePageState extends State<CoursePage> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                            boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
                           child: Material(
                             color: Colors.transparent,
@@ -249,7 +249,7 @@ class _CoursePageState extends State<CoursePage> {
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(color: gradeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                                      decoration: BoxDecoration(color: gradeColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
                                       child: Icon(Icons.class_rounded, color: gradeColor),
                                     ),
                                     const SizedBox(width: 16),
@@ -282,7 +282,7 @@ class _CoursePageState extends State<CoursePage> {
                                       decoration: BoxDecoration(
                                         color: gradeColor,
                                         borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [BoxShadow(color: gradeColor.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 3))],
+                                        boxShadow: [BoxShadow(color: gradeColor.withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 3))],
                                       ),
                                       child: Text(
                                         grade == 'Belum Diambil' ? '-' : grade,

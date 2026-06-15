@@ -16,9 +16,10 @@ class _RecommendationPageState extends State<RecommendationPage> {
   double ipk = 0.0;
   int maxSks = 0;
   int usedSks = 0;
+  int currentStudentSemester = 1;
 
   List<Map<String, dynamic>> recommendedCourses = [];
-  Set<String> selectedCourseIds = {}; // Nyimpen ID matkul yang dicentang user
+  Set<String> selectedCourseIds = {};
 
   @override
   void initState() {
@@ -26,7 +27,15 @@ class _RecommendationPageState extends State<RecommendationPage> {
     _fetchAndCalculateRecommendations();
   }
 
-  // --- FUNGSI KONVERSI NILAI KE BOBOT ANGKA ---
+  // Fungsi pembantu untuk konversi tipe data yang aman (handle null, String, int, double)
+  int _safeInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
   double _getGradeWeight(String grade) {
     switch (grade) {
       case 'A': return 4.0;
@@ -40,9 +49,9 @@ class _RecommendationPageState extends State<RecommendationPage> {
     }
   }
 
-  // --- LOGIKA UTAMA REKOMENDASI ---
   Future<void> _fetchAndCalculateRecommendations() async {
     try {
+      // 1. Ambil Progres Akademik
       var studentSnapshot = await FirebaseFirestore.instance
           .collection('student_courses')
           .doc(uid)
@@ -51,18 +60,20 @@ class _RecommendationPageState extends State<RecommendationPage> {
 
       int totalSksTaken = 0;
       double totalBobot = 0.0;
-      
-      Set<String> passedCourseCodes = {}; 
-      Set<String> failedCourseIds = {}; 
-      Set<String> takenCourseIds = {}; 
+      Set<String> passedCourseCodes = {};
+      Set<String> failedCourseIds = {};
+      Set<String> takenCourseIds = {};
+      int maxSemesterCompleted = 0;
 
       for (var doc in studentSnapshot.docs) {
         var data = doc.data();
         String grade = data['nilai'] ?? 'Belum Diambil';
-        int sks = data['sks'] ?? 0;
+        int sks = _safeInt(data['sks']);
         String kode = data['kode'] ?? '';
+        int sem = _safeInt(data['semester_tempuh']);
 
         if (grade != 'Belum Diambil') {
+          if (sem > maxSemesterCompleted) maxSemesterCompleted = sem;
           totalSksTaken += sks;
           totalBobot += (_getGradeWeight(grade) * sks);
           takenCourseIds.add(doc.id);
@@ -75,98 +86,106 @@ class _RecommendationPageState extends State<RecommendationPage> {
         }
       }
 
+      // Semester aktif yang akan ditempuh (misal lulus smt 2, maka sekarang menyusun smt 3)
+      currentStudentSemester = maxSemesterCompleted + 1;
+
+      // 2. Kalkulasi Beban SKS
       ipk = totalSksTaken > 0 ? (totalBobot / totalSksTaken) : 0.0;
       if (ipk >= 3.0) maxSks = 24;
       else if (ipk >= 2.5) maxSks = 21;
-      else maxSks = 18;
+      else if (ipk >= 2.0) maxSks = 18;
+      else maxSks = 15;
 
+      // 3. Ambil Master Kurikulum
       var masterSnapshot = await FirebaseFirestore.instance.collection('courses').get();
       List<Map<String, dynamic>> tempRecommendations = [];
 
       for (var doc in masterSnapshot.docs) {
         var data = doc.data();
         String courseId = doc.id;
-        
-        // Kalo matkul udah pernah diambil dan LULUS, skip
-        if (takenCourseIds.contains(courseId) && !failedCourseIds.contains(courseId)) {
+
+        int courseSemester = _safeInt(data['semester']);
+        int courseSks = _safeInt(data['sks']);
+
+        // A. Skip jika sudah lulus (kecuali mengulang)
+        if (takenCourseIds.contains(courseId) && !failedCourseIds.contains(courseId)) continue;
+
+        // B. FILTER: Aturan Ganjil-Ganjil / Genap-Genap
+        // Pastikan paritas semester mata kuliah cocok dengan semester mahasiswa saat ini
+        if (courseSemester != 0 && (courseSemester % 2 != currentStudentSemester % 2)) {
+          continue;
+        }
+
+        // C. FILTER: Batasan Semester 1 & 2 (Belum boleh ambil mata kuliah semester atas)
+        if (currentStudentSemester < 3 && courseSemester > currentStudentSemester) {
           continue;
         }
 
         bool isMengulang = failedCourseIds.contains(courseId);
 
-        // --- PERBAIKAN LOGIKA PRASYARAT (HANDLE ARRAY) ---
-        List<dynamic> prasyaratList = [];
-        if (data['prasyarat'] != null) {
-          if (data['prasyarat'] is List) {
-            prasyaratList = data['prasyarat']; // Kalo bentuknya Array
-          } else if (data['prasyarat'] is String) {
-            String txtReq = data['prasyarat'].toString().trim();
-            if (txtReq.isNotEmpty && txtReq != '-') {
-              prasyaratList = [txtReq]; // Kalo bentuknya String, jadiin Array isi 1
-            }
+        // D. Cek Prasyarat
+        List<dynamic> prasyaratList = data['prasyarat'] is List ? data['prasyarat'] : [];
+        bool allPrereqsMet = true;
+        for (var req in prasyaratList) {
+          if (!passedCourseCodes.contains(req.toString())) {
+            allPrereqsMet = false;
+            break;
           }
         }
 
-        // Kalo bukan matkul ngulang, cek SELURUH prasyaratnya
-        if (!isMengulang && prasyaratList.isNotEmpty) {
-          bool allPrereqsMet = true;
-          for (var req in prasyaratList) {
-            if (!passedCourseCodes.contains(req.toString())) {
-              allPrereqsMet = false; // Ada satu aja prasyarat yg belum lulus, langsung gagal
-              break;
-            }
-          }
-          
-          if (!allPrereqsMet) {
-            continue; // Skip matkul ini dari rekomendasi
-          }
+        if (!allPrereqsMet && !isMengulang) continue;
+
+        int priority = 0;
+        String reason = "";
+
+        if (isMengulang) {
+          priority = 3;
+          reason = "Wajib mengulang (Faktor: Perbaikan Nilai)";
+        } else if (courseSemester == currentStudentSemester) {
+          priority = 2;
+          reason = "Mata kuliah paket semester ini";
+        } else if (courseSemester < currentStudentSemester) {
+          priority = 1;
+          reason = "Mata kuliah tertinggal (Prioritas Kelulusan)";
+        } else {
+          priority = 0;
+          reason = "Akselerasi Semester Atas (Faktor Kapasitas)";
         }
-        // ------------------------------------------------
 
         tempRecommendations.add({
           'id': courseId,
           'kode': data['kode'] ?? '',
           'nama': data['nama'] ?? 'Mata Kuliah',
-          'sks': data['sks'] ?? 0,
-          'semester': data['semester'] ?? data['semester_tempuh'] ?? 0,
+          'sks': courseSks,
+          'semester': courseSemester,
           'isMengulang': isMengulang,
+          'priority': priority,
+          'reason': reason,
         });
       }
 
       tempRecommendations.sort((a, b) {
-        if (a['isMengulang'] && !b['isMengulang']) return -1;
-        if (!a['isMengulang'] && b['isMengulang']) return 1;
-        return (a['semester'] as int).compareTo(b['semester'] as int);
+        int res = (b['priority'] as int).compareTo(a['priority'] as int);
+        return res != 0 ? res : (a['semester'] as int).compareTo(b['semester'] as int);
       });
 
       setState(() {
         recommendedCourses = tempRecommendations;
         isLoading = false;
       });
-
     } catch (e) {
-      print("Error fetching recommendations: $e");
       setState(() => isLoading = false);
     }
   }
 
-  // --- FUNGSI TOGGLE CHECKBOX SKS ---
   void _toggleCourseSelection(String courseId, int sks) {
     setState(() {
       if (selectedCourseIds.contains(courseId)) {
-        // Batal milih
         selectedCourseIds.remove(courseId);
         usedSks -= sks;
       } else {
-        // Mau milih, cek kuota dulu
         if (usedSks + sks > maxSks) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Kuota SKS tidak cukup! Maksimal $maxSks SKS berdasarkan IPK Anda."),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Batas SKS tercapai!")));
         } else {
           selectedCourseIds.add(courseId);
           usedSks += sks;
@@ -178,174 +197,173 @@ class _RecommendationPageState extends State<RecommendationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text("Rencana Studi", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF2D3142),
-        elevation: 0,
+        title: const Text("Rekomendasi Matkul", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF2B5CFA)))
-          : Column(
-              children: [
-                // --- HEADER QUOTA SKS ---
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Kuota SKS", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600, fontSize: 14)),
-                              const SizedBox(height: 4),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(usedSks.toString(), style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Color(0xFF2B5CFA))),
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 6.0, left: 4.0),
-                                    child: Text("/ $maxSks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade400)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(color: const Color(0xFF2B5CFA).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-                            child: const Icon(Icons.shopping_bag_rounded, color: Color(0xFF2B5CFA), size: 32),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: maxSks > 0 ? (usedSks / maxSks) : 0,
-                          backgroundColor: Colors.grey.shade200,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            usedSks == maxSks ? const Color(0xFF10B981) : const Color(0xFF2B5CFA),
-                          ),
-                          minHeight: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // --- LIST MATKUL REKOMENDASI ---
-                Expanded(
-                  child: recommendedCourses.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.shade300),
-                              const SizedBox(height: 16),
-                              Text("Belum ada rekomendasi matkul saat ini.", style: TextStyle(color: Colors.grey.shade500)),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          itemCount: recommendedCourses.length,
-                          itemBuilder: (context, index) {
-                            var course = recommendedCourses[index];
-                            bool isSelected = selectedCourseIds.contains(course['id']);
-                            bool isMengulang = course['isMengulang'];
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF2B5CFA).withOpacity(0.05) : Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected ? const Color(0xFF2B5CFA) : Colors.grey.shade200,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(20),
-                                  onTap: () => _toggleCourseSelection(course['id'], course['sks']),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Row(
-                                      children: [
-                                        // Checkbox interaktif
-                                        Container(
-                                          width: 28, height: 28,
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? const Color(0xFF2B5CFA) : Colors.transparent,
-                                            border: Border.all(color: isSelected ? const Color(0xFF2B5CFA) : Colors.grey.shade400, width: 2),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: isSelected ? const Icon(Icons.check_rounded, size: 18, color: Colors.white) : null,
-                                        ),
-                                        const SizedBox(width: 16),
-                                        
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  if (isMengulang)
-                                                    Container(
-                                                      margin: const EdgeInsets.only(right: 8),
-                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                      decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                                                      child: const Text("NGULANG", style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
-                                                    ),
-                                                  Expanded(
-                                                    child: Text(
-                                                      course['nama'],
-                                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF2D3142)),
-                                                      maxLines: 2, overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.api_rounded, size: 14, color: Colors.grey.shade500),
-                                                  const SizedBox(width: 4),
-                                                  Text("${course['sks']} SKS", style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
-                                                  const SizedBox(width: 12),
-                                                  Icon(Icons.label_outline_rounded, size: 14, color: Colors.grey.shade500),
-                                                  const SizedBox(width: 4),
-                                                  Text(course['kode'], style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildAcademicSummary()),
+          recommendedCourses.isEmpty
+              ? const SliverFillRemaining(child: Center(child: Text("Tidak ada rekomendasi.")))
+              : SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                    (context, index) => _buildCourseCard(recommendedCourses[index]),
+                childCount: recommendedCourses.length,
+              ),
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _buildActionBottomBar(),
+    );
+  }
+
+  Widget _buildAcademicSummary() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _summaryItem("IPK", ipk.toStringAsFixed(2), Colors.blue),
+              _summaryItem("Batas SKS", "$maxSks", Colors.orange),
+              _summaryItem("Semester", "$currentStudentSemester", Colors.green),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildSksProgress(),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+
+  Widget _buildSksProgress() {
+    double progress = maxSks > 0 ? (usedSks / maxSks) : 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text("Beban Studi Dipilih", style: TextStyle(fontWeight: FontWeight.w600)),
+            Text("$usedSks / $maxSks SKS", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 12,
+            backgroundColor: Colors.grey.shade100,
+            valueColor: AlwaysStoppedAnimation<Color>(usedSks > maxSks ? Colors.red : Colors.blue),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCourseCard(Map<String, dynamic> course) {
+    bool isSelected = selectedCourseIds.contains(course['id']);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.blue.withOpacity(0.05) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade200, width: 2),
+      ),
+      child: InkWell(
+        onTap: () => _toggleCourseSelection(course['id'], course['sks']),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _buildPriorityIndicator(course['priority']),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(course['nama'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text("${course['kode']} • Smtr ${course['semester']} • ${course['sks']} SKS",
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 14, color: Colors.blue.shade300),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(course['reason'],
+                              style: TextStyle(color: Colors.blue.shade700, fontSize: 11, fontStyle: FontStyle.italic)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(isSelected ? Icons.check_circle : Icons.add_circle_outline,
+                  color: isSelected ? Colors.blue : Colors.grey.shade400),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityIndicator(int priority) {
+    Color color;
+    String label;
+    if (priority == 3) { color = Colors.red; label = "Wajib"; }
+    else if (priority == 2) { color = Colors.blue; label = "Utama"; }
+    else { color = Colors.grey; label = "Pilihan"; }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildActionBottomBar() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Colors.black12))),
+      child: ElevatedButton(
+        onPressed: selectedCourseIds.isEmpty ? null : () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Text("Simpan Rencana Studi", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 }

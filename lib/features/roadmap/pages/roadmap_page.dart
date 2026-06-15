@@ -285,7 +285,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
         var data = doc.data();
         int sem = int.tryParse(data['semester']?.toString() ?? data['semester_tempuh']?.toString() ?? '0') ?? 0;
         int sks = data['sks'] ?? 0;
-        
+
         if (sem > 0 && sem <= targetSemester) {
           var studentCourse = studentDataMap[doc.id];
           String status = studentCourse?['status'] ?? 'Belum Diambil';
@@ -296,7 +296,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
           if (isLulus) {
             sksLulus += sks;
             // Kalau lulus, asumsi kita udah ngelewatin semester itu
-            if (sem >= currentSemester) currentSemester = sem + 1; 
+            if (sem >= currentSemester) currentSemester = sem + 1;
           } else if (isSedangDitempuh) {
             // Kalau ada yang lagi ditempuh, fix itu semester kita sekarang
             if (sem > currentSemester) currentSemester = sem;
@@ -331,7 +331,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
         'totalSksTarget': totalSksTarget,
       };
     } catch (e) {
-      print("Error fetching roadmap: $e");
+      debugPrint("Error fetching roadmap: $e");
       return {};
     }
   }
@@ -376,7 +376,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
           int sisaSks = totalSksTarget - sksLulus;
           int sisaSemester = targetSemester - currentSemester + 1;
           // Hindari pembagian dengan 0
-          int rataRataSks = sisaSemester > 0 ? (sisaSks / sisaSemester).ceil() : 0; 
+          int rataRataSks = sisaSemester > 0 ? (sisaSks / sisaSemester).ceil() : 0;
           double percent = (sksLulus / totalSksTarget).clamp(0.0, 1.0);
 
           return SingleChildScrollView(
@@ -491,202 +491,111 @@ class _RoadmapPageState extends State<RoadmapPage> {
                           }
                           return true;
                         }).toList();
-                        
+
                         bool isCompleted = sem < currentSemester;
                         bool isCurrent = sem == currentSemester;
                         bool isFuture = sem > currentSemester;
 
-                        // Desain icon bulat
-                        Widget timelineNode;
-                        if (isCompleted) {
-                          timelineNode = Container(
-                            width: 24, height: 24,
-                            decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-                            child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                          );
-                        } else if (isCurrent) {
-                          timelineNode = Container(
-                            width: 24, height: 24,
-                            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFF2B5CFA), width: 6)),
-                          );
-                        } else {
-                          timelineNode = Container(
-                            width: 24, height: 24,
-                            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade400, width: 3)),
-                            child: sem == targetSemester ? Icon(Icons.flag_rounded, color: Colors.grey.shade400, size: 14) : null,
-                          );
-                        }
-
-                        // Ngambil contoh matkul buat subtitle (mirip di mockup)
-                        String subtitleStr = "";
-                        if (isCurrent || isFuture) {
-                          if (coursesList.isNotEmpty) {
-                            var sample = coursesList.take(2).map((c) => c['nama']).join(", ");
-                            subtitleStr = coursesList.length > 2 ? "$sample, ..." : sample;
-                          }
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: isCompleted || isOnProgress ? cardColor : Colors.grey.shade200, width: 2),
+                  boxShadow: [
+                    if (isCompleted || isOnProgress) 
+                      BoxShadow(color: cardColor.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+                  ],
+                ),
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent), // Ngilangin border pas di-expand
+                  child: ExpansionTile(
+                    iconColor: textColor,
+                    collapsedIconColor: textColor,
+                    tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    title: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.2) : const Color(0xFFF4F6F9),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isCompleted ? Icons.check_circle_rounded : Icons.flag_rounded, 
+                            color: isCompleted || isOnProgress ? Colors.white : Colors.grey.shade400,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Area Icon & Background Putih biar garis ketutup
-                              Container(
-                                color: const Color(0xFFFAFAFA),
-                                padding: const EdgeInsets.only(left: 8, right: 16, top: 12, bottom: 12),
-                                child: timelineNode,
+                              Text(
+                                "Semester $sem",
+                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: textColor),
                               ),
-                              // Area Kartu Konten
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
-                                  ),
-                                  child: Theme(
-                                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                                    child: ExpansionTile(
-                                      iconColor: Colors.grey.shade600,
-                                      collapsedIconColor: Colors.grey.shade400,
-                                      tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                      title: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    "Semester $sem",
-                                                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: isCurrent ? const Color(0xFF2B5CFA) : const Color(0xFF1E293B)),
-                                                  ),
-                                                  if (isCurrent) ...[
-                                                    const SizedBox(width: 6),
-                                                    Text("(Saat Ini)", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF2B5CFA).withOpacity(0.8))),
-                                                  ]
-                                                ],
-                                              ),
-                                              if (subtitleStr.isNotEmpty) ...[
-                                                const SizedBox(height: 4),
-                                                SizedBox(
-                                                  width: 140, // Batasin lebar biar gak nabrak SKS
-                                                  child: Text(subtitleStr, style: TextStyle(fontSize: 11, color: Colors.grey.shade500), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                                ),
-                                              ]
-                                            ],
-                                          ),
-                                          Text(
-                                            isCompleted ? "${semData['total_sks']} SKS" : (isCurrent ? "${semData['total_sks']} SKS" : "18-24 SKS"),
-                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
-                                          ),
-                                        ],
-                                      ),
-                                      children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(16),
-                                            decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16)),
-                                            child: Column(
-                                              children: coursesList.map<Widget>((course) {
-                                                bool courseLulus = course['isLulus'];
-                                                return Padding(
-                                                  padding: const EdgeInsets.only(bottom: 8),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        courseLulus ? Icons.check_circle_rounded : Icons.circle_outlined,
-                                                        color: courseLulus ? const Color(0xFF10B981) : Colors.grey.shade400,
-                                                        size: 16,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Expanded(
-                                                        child: Text(
-                                                          course['nama'],
-                                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: courseLulus ? const Color(0xFF1E293B) : Colors.grey.shade600),
-                                                        ),
-                                                      ),
-                                                      Text("${course['sks']} SKS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
-                                                    ],
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "${semData['lulus']} dari ${semData['total']} Matkul Selesai",
+                                style: TextStyle(
+                                  fontSize: 12, 
+                                  fontWeight: FontWeight.w600,
+                                  color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.8) : Colors.grey.shade500,
                                 ),
                               ),
                             ],
                           ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // --- MILESTONE KELULUSAN ---
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Milestone Kelulusan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                    InkWell(
-                      onTap: () {
-                        _showAllMilestones(context, percent);
-                      },
-                      child: Text("Lihat semua", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade400)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      _buildMilestoneItem(Icons.check_rounded, "100 SKS", true),
-                      _buildMilestoneItem(Icons.check_rounded, "Kerja Praktik", true),
-                      _buildMilestoneItem(Icons.hourglass_empty_rounded, "Seminar Proposal", false, isWarning: true),
-                      _buildMilestoneItem(Icons.lock_rounded, "Skripsi", false),
-                      _buildMilestoneItem(Icons.lock_rounded, "Sidang", false),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // --- INSIGHT GRADVENTURE BANNER ---
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFFF3E8FF), Color(0xFFE0E7FF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.auto_awesome_rounded, color: Color(0xFF8B5CF6), size: 18),
-                                SizedBox(width: 8),
-                                Text("Insight Gradventure", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF4C1D95))),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text("Untuk lulus di Semester $targetSemester, usahakan ambil minimal $rataRataSks SKS setiap semester ya!", style: const TextStyle(fontSize: 12, color: Color(0xFF5B21B6), height: 1.4)),
-                          ],
                         ),
-                      ),
-                      const SizedBox(width: 16),
+                      ],
+                    ),
+                    children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF2B5CFA), size: 32),
+                        padding: const EdgeInsets.all(20),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+                        ),
+                        child: Column(
+                          children: (semData['courses'] as List).map<Widget>((course) {
+                            bool courseLulus = course['isLulus'];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    courseLulus ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                    color: courseLulus ? const Color(0xFF10B981) : Colors.grey.shade300,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      course['nama'],
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: courseLulus ? const Color(0xFF2D3142) : Colors.grey.shade500,
+                                        decoration: courseLulus ? TextDecoration.none : TextDecoration.lineThrough,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF4F6F9),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      "${course['sks']} SKS",
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ],
                   ),
@@ -725,7 +634,7 @@ class _RoadmapPageState extends State<RoadmapPage> {
   Widget _buildMilestoneItem(IconData icon, String title, bool isCompleted, {bool isWarning = false}) {
     Color bgColor = isCompleted ? const Color(0xFF10B981).withOpacity(0.1) : (isWarning ? const Color(0xFFF59E0B).withOpacity(0.1) : Colors.grey.shade100);
     Color iconColor = isCompleted ? const Color(0xFF10B981) : (isWarning ? const Color(0xFFF59E0B) : Colors.grey.shade400);
-    
+
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: Column(

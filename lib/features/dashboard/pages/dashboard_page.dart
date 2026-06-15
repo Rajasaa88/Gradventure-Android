@@ -11,7 +11,7 @@ import '../../roadmap/pages/roadmap_page.dart';
 import '../../recommendation/pages/recommendation_page.dart';
 import '../../consultation/pages/consultation_page.dart';
 import '../../profile/pages/profile_page.dart';
-import '../../consultation/pages/ai_chat_page.dart'; 
+import '../../consultation/pages/ai_chat_page.dart';
 import '../../notification/pages/notification_page.dart'; // Sesuaikan sama folder lo ya
 
 class DashboardPage extends StatefulWidget {
@@ -46,7 +46,7 @@ class _DashboardPageState extends State<DashboardPage> {
         matkulBerjalan++;
       }
     }
-    
+
     // Default total matkul di TI biasanya sekitar 86
     return {
       'totalSKS': totalSKS,
@@ -63,7 +63,7 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.06),
+            color: themeColor.withOpacity(0.08),
             blurRadius: 15,
             spreadRadius: 2,
             offset: const Offset(0, 5),
@@ -73,8 +73,15 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+          borderRadius: BorderRadius.circular(24),
+          splashColor: themeColor.withOpacity(0.1),
+          highlightColor: themeColor.withOpacity(0.05),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => page),
+            );
+          },
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -83,8 +90,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(12),
+                    color: themeColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(icon, color: iconColor, size: 24),
                 ),
@@ -147,7 +154,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA), // Background super terang ala mockup
-      
+
       // --- APP BAR CUSTOM ---
       appBar: AppBar(
         elevation: 0,
@@ -199,30 +206,43 @@ class _DashboardPageState extends State<DashboardPage> {
 
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // --- PROFILE HEADER ---
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
-                      backgroundImage: photoUrl != null ? MemoryImage(base64Decode(photoUrl)) : null,
-                      child: photoUrl == null ? Text(initial, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA))) : null,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "Halo, ${user['nama'].toString().split(' ')[0]}",
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1E293B)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- HEADER SECTION ---
+                  Row(
+                    children: [
+                      // --- DYNAMIC AVATAR (BASE64 / INITIAL TEXT) ---
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
+                        backgroundImage: photoUrl != null 
+                            ? MemoryImage(base64Decode(photoUrl)) 
+                            : null,
+                        child: photoUrl == null
+                            ? Text(
+                                initial,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2B5CFA),
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Halo, ${user['nama'].toString().split(' ')[0]} 👋",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF2D3142),
                               ),
                               const SizedBox(width: 6),
                               const Text("👋", style: TextStyle(fontSize: 20)),
@@ -269,83 +289,86 @@ class _DashboardPageState extends State<DashboardPage> {
                       int matkulBerjalan = progressSnap.data?['matkulBerjalan'] ?? 0;
                       double percent = (sksLulus / 144).clamp(0.0, 1.0);
 
-                      return Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Ringkasan Progres", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
-                              Text("Lihat Detail >", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF2B5CFA).withOpacity(0.8))),
-                            ],
+                      return Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF1E293B), Color(0xFF334155)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          const SizedBox(height: 24),
-                          Row(
-                            children: [
-                              // Circular Chart
-                              Expanded(
-                                flex: 4,
-                                child: Column(
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF1E293B).withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
                                   children: [
-                                    const Text("Progress Kelulusan", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
-                                    const SizedBox(height: 12),
-                                    CircularPercentIndicator(
-                                      radius: 50.0,
-                                      lineWidth: 10.0,
-                                      animation: true,
-                                      percent: percent,
-                                      circularStrokeCap: CircularStrokeCap.round,
-                                      progressColor: const Color(0xFF2B5CFA),
-                                      backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
-                                      center: Text(
-                                        "${(percent * 100).toStringAsFixed(1)}%",
-                                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF1E293B)),
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        shape: BoxShape.circle,
                                       ),
+                                      child: const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 20),
                                     ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text("$sksLulus", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA), fontSize: 13)),
-                                        Text(" / 144 SKS", style: TextStyle(fontWeight: FontWeight.w500, color: Colors.grey.shade600, fontSize: 12)),
-                                      ],
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      "SKS Terkumpul",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              // Vertical Stats
-                              Expanded(
-                                flex: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.only(left: 16),
-                                  child: Column(
-                                    children: [
-                                      _statItem(Icons.check_circle_rounded, const Color(0xFF10B981), const Color(0xFF10B981).withOpacity(0.1), "Mata Kuliah Selesai", "$matkulLulus", total: "86"),
-                                      const SizedBox(height: 16),
-                                      _statItem(Icons.access_time_filled_rounded, const Color(0xFFF59E0B), const Color(0xFFF59E0B).withOpacity(0.1), "Sedang Ditempuh", "$matkulBerjalan Matkul"),
-                                      const SizedBox(height: 16),
-                                      _statItem(Icons.track_changes_rounded, const Color(0xFF8B5CF6), const Color(0xFF8B5CF6).withOpacity(0.1), "Estimasi Lulus", "Semester 8"),
-                                    ],
+                                Text(
+                                  "${(progress * 100).toStringAsFixed(1)}%",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                backgroundColor: Colors.white.withOpacity(0.15),
+                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF50E3C2)),
+                                minHeight: 12,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          // Alert Box Bawah
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(color: const Color(0xFF2B5CFA).withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
-                            child: Row(
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Icon(Icons.bar_chart_rounded, color: Color(0xFF2B5CFA), size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("Kamu berada di jalur yang sesuai", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA))),
-                                      Text("Pertahankan progresmu!", style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-                                    ],
+                                Text(
+                                  "$sksLulus SKS",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  "144 SKS",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.6),
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B5CFA), size: 16),
@@ -424,14 +447,14 @@ class _DashboardPageState extends State<DashboardPage> {
     return InkWell(
       onTap: () {
         setState(() => _currentIndex = index);
-        
-        if (index == 1) { 
+
+        if (index == 1) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const ConsultationPage()))
-              .then((_) => setState(() => _currentIndex = 0)); 
+              .then((_) => setState(() => _currentIndex = 0));
         } else if (index == 2) { // <-- UBAH BAGIAN INI
           Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPage()))
               .then((_) => setState(() => _currentIndex = 0));
-        } else if (index == 3) { 
+        } else if (index == 3) {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()))
               .then((_) => setState(() => _currentIndex = 0));
         }

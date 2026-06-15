@@ -194,39 +194,30 @@ class _ProgressPageState extends State<ProgressPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade100, width: 2),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(color: color.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 8)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 18),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(title, style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+              ),
+            ],
           ),
-          const Spacer(),
-          Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500), maxLines: 2, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 16),
+          Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF2D3142))),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-        ],
-      ),
-    );
-  }
-
-  // --- WIDGET HELPER BUAT LIST PERSYARATAN ---
-  Widget _buildRequirementRow(String title, String value, IconData icon, Color iconColor, bool isCompleted) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(color: isCompleted ? iconColor : Colors.grey.shade100, shape: BoxShape.circle),
-            child: Icon(icon, color: isCompleted ? Colors.white : Colors.grey.shade400, size: 14),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade700))),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isCompleted ? const Color(0xFF1E293B) : Colors.grey.shade500)),
+          Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -334,9 +325,12 @@ class _ProgressPageState extends State<ProgressPage> {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                    gradient: LinearGradient(
+                      colors: [statusColor.withOpacity(0.8), statusColor],
+                      begin: Alignment.topLeft, end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: const Color(0xFF1E3A8A).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
+                    boxShadow: [BoxShadow(color: statusColor.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,157 +338,17 @@ class _ProgressPageState extends State<ProgressPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          GestureDetector(
-                            onTap: () => _showProgressInfoDialog(context),
-                            child: const Row(
-                              children: [
-                                Text("Progress Kelulusan", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
-                                SizedBox(width: 4),
-                                Icon(Icons.help_outline_rounded, color: Colors.white70, size: 14),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.school_rounded, color: Colors.white.withOpacity(0.8), size: 40),
+                          const Text("Hak SKS Semester Depan", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                          Icon(Icons.auto_awesome_rounded, color: Colors.white.withOpacity(0.8), size: 20),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text("$totalSKS / 144 SKS", style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 4),
-                      Text("${(percentLulus * 100).toStringAsFixed(1)}%", style: const TextStyle(color: Color(0xFF34D399), fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 16),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: percentLulus,
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF34D399)),
-                          minHeight: 8,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Estimasi Lulus", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              const Text("Semester 8", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text("Status", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(color: const Color(0xFF34D399).withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                                child: const Row(
-                                  children: [
-                                    Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 14),
-                                    SizedBox(width: 4),
-                                    Text("On Track", style: TextStyle(color: Color(0xFF34D399), fontSize: 12, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                      Text(jatahSks, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 8),
+                      Text(pesanSks, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, height: 1.4)),
                     ],
                   ),
-                ),
-                const SizedBox(height: 32),
-
-                // --- RINGKASAN AKADEMIK ---
-                const Text("Ringkasan Akademik", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.65,
-                  children: [
-                    _buildSummaryCard("IPK Saat Ini", ipk.toStringAsFixed(2), Icons.school_rounded, const Color(0xFF8B5CF6)),
-                    _buildSummaryCard("SKS Lulus", "$totalSKS", Icons.check_circle_rounded, const Color(0xFF10B981)),
-                    _buildSummaryCard("Mata Kuliah", "$matkulLulus", Icons.menu_book_rounded, const Color(0xFF2B5CFA)),
-                    _buildSummaryCard("Sisa SKS", "$sisaSks", Icons.access_time_filled_rounded, const Color(0xFFF59E0B)),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                // --- PERSYARATAN KELULUSAN ---
-                const Text("Persyaratan Kelulusan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
                   ),
-                  child: Column(
-                    children: [
-                      _buildRequirementRow("SKS Total", "$totalSKS / 144 SKS", Icons.check_rounded, const Color(0xFF10B981), totalSKS >= 144),
-                      const Divider(height: 20),
-                      _buildRequirementRow("Mata Kuliah Wajib", "$sksWajib SKS", Icons.check_rounded, const Color(0xFF10B981), sksWajib > 0),
-                      const Divider(height: 20),
-                      _buildRequirementRow("Mata Kuliah Pilihan", "$sksPilihan SKS", Icons.access_time_rounded, const Color(0xFFF59E0B), sksPilihan > 0),
-                      const Divider(height: 20),
-                      _buildRequirementRow("Kerja Praktik", hasKP ? "Selesai" : "Belum ditempuh", hasKP ? Icons.check_rounded : Icons.access_time_rounded, const Color(0xFFF59E0B), hasKP),
-                      const Divider(height: 20),
-                      _buildRequirementRow("Skripsi", hasSkripsi ? "Selesai" : "Belum ditempuh", hasSkripsi ? Icons.check_rounded : Icons.close_rounded, const Color(0xFFEF4444), hasSkripsi),
-                      const Divider(height: 20),
-                      _buildRequirementRow("Sidang", hasSidang ? "Selesai" : "Belum ditempuh", hasSidang ? Icons.check_rounded : Icons.close_rounded, const Color(0xFFEF4444), hasSidang),
-                      const SizedBox(height: 16),
-                      InkWell(
-                        onTap: () {
-                          _showRequirementDetails(context, totalSKS, sksWajib, sksPilihan, hasKP, hasSkripsi, hasSidang);
-                        },
-                        child: Row(
-                          children: [
-                            Text("Lihat Detail", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF2B5CFA).withOpacity(0.8))),
-                            const Spacer(),
-                            Icon(Icons.chevron_right_rounded, color: Colors.grey.shade400, size: 20),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // --- ANALISIS GRADVENTURE ---
-                const Text("Analisis Gradventure", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.auto_awesome_rounded, color: Color(0xFF10B981), size: 24),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text("Kamu berada pada jalur yang sesuai untuk lulus di Semester 8.", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF047857), height: 1.4)),
-                            const SizedBox(height: 8),
-                            Text("Pertahankan rata-rata 18 SKS per semester dan IPK-mu!", style: TextStyle(fontSize: 12, color: const Color(0xFF047857).withOpacity(0.8), height: 1.4)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 32),
 
                 // --- TREN IPK ---
@@ -579,15 +433,76 @@ class _ProgressPageState extends State<ProgressPage> {
                             ),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: const Color(0xFF2B5CFA).withOpacity(0.05),
+                              color: const Color(0xFF2B5CFA).withOpacity(0.1),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 32),
                 ],
+
+                // --- WARNING SECTION (MATKUL PERLU PERHATIAN) ---
+                const Text("Perlu Perhatian 👀", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF2D3142))),
+                const SizedBox(height: 16),
+                if (warningCourses.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.celebration_rounded, color: Color(0xFF10B981)),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text("Gacor! Nggak ada matkul yang dapet nilai C ke bawah.", style: TextStyle(color: Color(0xFF047857), fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: warningCourses.length,
+                    itemBuilder: (context, index) {
+                      var course = warningCourses[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                          border: Border.all(color: Colors.redAccent.withOpacity(0.1)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.1), shape: BoxShape.circle),
+                              child: Text(course['nilai'], style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(course['nama'], style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2D3142))),
+                                  const SizedBox(height: 4),
+                                  Text("Mungkin perlu diulang buat perbaikan IPK.", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
           );
