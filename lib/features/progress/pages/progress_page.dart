@@ -187,7 +187,7 @@ class _ProgressPageState extends State<ProgressPage> {
   }
 
   // --- WIDGET HELPER BUAT RINGKASAN AKADEMIK ---
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSummaryCard(String title, String value, IconData icon, Color color, String subtitle) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
@@ -251,7 +251,7 @@ class _ProgressPageState extends State<ProgressPage> {
             return const Center(child: Text("Belum ada data akademik."));
           }
 
-          int totalSKS = 0;
+           int totalSKS = 0;
           double totalBobot = 0.0;
           int matkulLulus = 0;
 
@@ -263,6 +263,7 @@ class _ProgressPageState extends State<ProgressPage> {
 
           Map<int, int> sksPerSemester = {};
           Map<int, double> bobotPerSemester = {};
+          List<Map<String, dynamic>> warningCourses = [];
 
           // --- LOGIKA KALKULASI IPK & PERSYARATAN ---
           for (var doc in snapshot.data!.docs) {
@@ -293,6 +294,13 @@ class _ProgressPageState extends State<ProgressPage> {
               if (nama.contains('kerja praktik') || nama.contains('kp')) hasKP = true;
               if (nama.contains('skripsi')) hasSkripsi = true;
               if (nama.contains('sidang')) hasSidang = true;
+
+              if (grade == 'C' || grade == 'D' || grade == 'E') {
+                warningCourses.add({
+                  'nama': data['nama'] ?? 'Mata Kuliah',
+                  'nilai': grade,
+                });
+              }
             }
           }
 
@@ -300,6 +308,29 @@ class _ProgressPageState extends State<ProgressPage> {
           double percentLulus = (totalSKS / 144).clamp(0.0, 1.0);
           int sisaSks = 144 - totalSKS;
           if (sisaSks < 0) sisaSks = 0;
+
+          int jatahVal = 24;
+          if (ipk < 2.0) {
+            jatahVal = 15;
+          } else if (ipk < 2.5) {
+            jatahVal = 18;
+          } else if (ipk < 3.0) {
+            jatahVal = 21;
+          } else {
+            jatahVal = 24;
+          }
+          String jatahSks = "$jatahVal SKS";
+
+          Color statusColor = const Color(0xFF2B5CFA);
+          if (ipk >= 3.0) {
+            statusColor = const Color(0xFF10B981);
+          } else if (ipk >= 2.0) {
+            statusColor = const Color(0xFFF59E0B);
+          } else {
+            statusColor = const Color(0xFFEF4444);
+          }
+
+          String pesanSks = "Berdasarkan IPK terakhir (${ipk.toStringAsFixed(2)}), kamu bisa mengambil hingga $jatahVal SKS pada semester depan.";
 
           // Siapin data Line Chart
           List<FlSpot> chartSpots = [];

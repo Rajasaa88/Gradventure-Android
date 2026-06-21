@@ -223,61 +223,151 @@ class _ConsultationPageState extends State<ConsultationPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("Buat Jadwal Bimbingan", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D3142))),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _topikController,
-                  onChanged: (val) {
-                    if (_topikError != null) {
-                      setModalState(() {
-                        _topikError = null;
-                      });
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: "Agenda / Topik Bimbingan",
-                    errorText: _topikError,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        await _pickDate();
-                        setModalState(() {}); 
-                      },
-                      icon: const Icon(Icons.calendar_today_rounded, size: 18),
-                      label: Text(_selectedDate == null ? "Pilih Tanggal Konsultasi" : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"),
-                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
                   TextField(
-                    controller: _catatanController,
-                    maxLines: 5,
+                    controller: _topikController,
+                    onChanged: (val) {
+                      if (_topikError != null) {
+                        setModalState(() {
+                          _topikError = null;
+                        });
+                      }
+                    },
                     decoration: InputDecoration(
-                      labelText: "Hasil Diskusi / Pesan Dosen", 
-                      alignLabelWithHint: true,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))
+                      labelText: "Agenda / Topik Bimbingan",
+                      errorText: _topikError,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              onTap: () async { await _pickDate(setModalState); },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  border: Border.all(
+                                    color: _dateError != null ? Colors.redAccent : const Color(0xFFE2E8F0),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today_rounded, size: 18, color: Color(0xFF2B5CFA)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _selectedDate == null 
+                                            ? "Pilih Tanggal" 
+                                            : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: _selectedDate == null ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (_dateError != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8, top: 4),
+                                child: Text(_dateError!, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.w500)),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              onTap: () async { await _pickTime(setModalState); },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  border: Border.all(
+                                    color: _timeError != null ? Colors.redAccent : const Color(0xFFE2E8F0),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.access_time_rounded, size: 18, color: Color(0xFF2B5CFA)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _selectedTime == null 
+                                            ? "Pilih Waktu" 
+                                            : "${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: _selectedTime == null ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (_timeError != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8, top: 4),
+                                child: Text(_timeError!, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.w500)),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(controller: _catatanController, maxLines: 3, decoration: InputDecoration(labelText: "Catatan / Detail Kegiatan (Opsional)", alignLabelWithHint: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text("Ingatkan 15 Menit Sebelum", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2D3142))),
+                    subtitle: const Text("Kirimkan notifikasi tambahan 15 menit sebelum bimbingan", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    value: _remind15MinsBefore,
+                    activeColor: const Color(0xFF2B5CFA),
+                    onChanged: (bool value) {
+                      setModalState(() {
+                        _remind15MinsBefore = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSubmitting ? null : _saveNote,
+                      onPressed: _isSubmitting ? null : () => _saveNote(setModalState),
                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2B5CFA), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      child: _isSubmitting 
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
-                          : const Text("Simpan Catatan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: _isSubmitting ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white)) : const Text("Simpan Jadwal", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                   const SizedBox(height: 24),
                 ],
               ),
-            );
-          }
-        );
+            ),
+          );
+        });
       },
     );
   }

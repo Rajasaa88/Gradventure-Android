@@ -493,112 +493,124 @@ class _RoadmapPageState extends State<RoadmapPage> {
                         }).toList();
 
                         bool isCompleted = sem < currentSemester;
-                        bool isCurrent = sem == currentSemester;
+                        bool isOnProgress = sem == currentSemester;
                         bool isFuture = sem > currentSemester;
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: isCompleted || isOnProgress ? cardColor : Colors.grey.shade200, width: 2),
-                  boxShadow: [
-                    if (isCompleted || isOnProgress) 
-                      BoxShadow(color: cardColor.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
-                  ],
-                ),
-                child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent), // Ngilangin border pas di-expand
-                  child: ExpansionTile(
-                    iconColor: textColor,
-                    collapsedIconColor: textColor,
-                    tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    title: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
+                        Color cardColor = isCompleted || isOnProgress
+                            ? const Color(0xFF2B5CFA)
+                            : Colors.white;
+                        Color textColor = isCompleted || isOnProgress
+                            ? Colors.white
+                            : const Color(0xFF1E293B);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
-                            color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.2) : const Color(0xFFF4F6F9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isCompleted ? Icons.check_circle_rounded : Icons.flag_rounded, 
-                            color: isCompleted || isOnProgress ? Colors.white : Colors.grey.shade400,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Semester $sem",
-                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: textColor),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "${semData['lulus']} dari ${semData['total']} Matkul Selesai",
-                                style: TextStyle(
-                                  fontSize: 12, 
-                                  fontWeight: FontWeight.w600,
-                                  color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.8) : Colors.grey.shade500,
-                                ),
-                              ),
+                            color: cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isCompleted || isOnProgress ? cardColor : Colors.grey.shade200, width: 2),
+                            boxShadow: [
+                              if (isCompleted || isOnProgress)
+                                BoxShadow(color: cardColor.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-                        ),
-                        child: Column(
-                          children: (semData['courses'] as List).map<Widget>((course) {
-                            bool courseLulus = course['isLulus'];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Row(
+                          child: Theme(
+                            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              iconColor: textColor,
+                              collapsedIconColor: textColor,
+                              tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              title: Row(
                                 children: [
-                                  Icon(
-                                    courseLulus ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                                    color: courseLulus ? const Color(0xFF10B981) : Colors.grey.shade300,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      course['nama'],
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: courseLulus ? const Color(0xFF2D3142) : Colors.grey.shade500,
-                                        decoration: courseLulus ? TextDecoration.none : TextDecoration.lineThrough,
-                                      ),
-                                    ),
-                                  ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF4F6F9),
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.2) : const Color(0xFFF4F6F9),
+                                      shape: BoxShape.circle,
                                     ),
-                                    child: Text(
-                                      "${course['sks']} SKS",
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+                                    child: Icon(
+                                      isCompleted ? Icons.check_circle_rounded : Icons.flag_rounded,
+                                      color: isCompleted || isOnProgress ? Colors.white : Colors.grey.shade400,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Semester $sem",
+                                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: textColor),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${semData['lulus_sks']} dari ${semData['total_sks']} SKS Lulus",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: isCompleted || isOnProgress ? Colors.white.withOpacity(0.8) : Colors.grey.shade500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+                                  ),
+                                  child: Column(
+                                    children: coursesList.map<Widget>((course) {
+                                      bool courseLulus = course['isLulus'];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              courseLulus ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                                              color: courseLulus ? const Color(0xFF10B981) : Colors.grey.shade300,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                course['nama'],
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: courseLulus ? const Color(0xFF2D3142) : Colors.grey.shade500,
+                                                  decoration: courseLulus ? TextDecoration.none : TextDecoration.lineThrough,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF4F6F9),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                "${course['sks']} SKS",
+                                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 30),
               ],

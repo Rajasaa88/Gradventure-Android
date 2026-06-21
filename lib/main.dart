@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options.dart';
 import 'features/auth/pages/login_page.dart';
+import 'features/dashboard/pages/dashboard_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
