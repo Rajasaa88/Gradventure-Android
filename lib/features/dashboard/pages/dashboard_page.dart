@@ -179,7 +179,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-            onPressed: () {},
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPage())),
           ),
         ],
       ),
@@ -275,7 +275,10 @@ class _DashboardPageState extends State<DashboardPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text("Ringkasan Progres", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
-                              Text("Lihat Detail >", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF2B5CFA).withOpacity(0.8))),
+                              InkWell(
+                                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoadmapPage())),
+                                child: Text("Lihat Detail >", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF2B5CFA).withOpacity(0.8))),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -319,11 +322,32 @@ class _DashboardPageState extends State<DashboardPage> {
                                   padding: const EdgeInsets.only(left: 16),
                                   child: Column(
                                     children: [
-                                      _statItem(Icons.check_circle_rounded, const Color(0xFF10B981), const Color(0xFF10B981).withOpacity(0.1), "Mata Kuliah Selesai", "$matkulLulus", total: "86"),
-                                      const SizedBox(height: 16),
-                                      _statItem(Icons.access_time_filled_rounded, const Color(0xFFF59E0B), const Color(0xFFF59E0B).withOpacity(0.1), "Sedang Ditempuh", "$matkulBerjalan Matkul"),
-                                      const SizedBox(height: 16),
-                                      _statItem(Icons.track_changes_rounded, const Color(0xFF8B5CF6), const Color(0xFF8B5CF6).withOpacity(0.1), "Estimasi Lulus", "Semester 8"),
+                                      InkWell(
+                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProgressPage())),
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: _statItem(Icons.check_circle_rounded, const Color(0xFF10B981), const Color(0xFF10B981).withOpacity(0.1), "Mata Kuliah Selesai", "$matkulLulus", total: "86"),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      InkWell(
+                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CoursePage())),
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: _statItem(Icons.access_time_filled_rounded, const Color(0xFFF59E0B), const Color(0xFFF59E0B).withOpacity(0.1), "Sedang Ditempuh", "$matkulBerjalan Matkul"),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      InkWell(
+                                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoadmapPage())),
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: _statItem(Icons.track_changes_rounded, const Color(0xFF8B5CF6), const Color(0xFF8B5CF6).withOpacity(0.1), "Estimasi Lulus", "Semester 8"),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
