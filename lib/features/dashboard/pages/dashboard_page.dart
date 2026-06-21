@@ -207,11 +207,15 @@ class _DashboardPageState extends State<DashboardPage> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
-                      backgroundImage: photoUrl != null ? MemoryImage(base64Decode(photoUrl)) : null,
-                      child: photoUrl == null ? Text(initial, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA))) : null,
+                    InkWell(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
+                      customBorder: const CircleBorder(),
+                      child: CircleAvatar(
+                        radius: 35,
+                        backgroundColor: const Color(0xFF2B5CFA).withOpacity(0.1),
+                        backgroundImage: photoUrl != null ? MemoryImage(base64Decode(photoUrl)) : null,
+                        child: photoUrl == null ? Text(initial, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA))) : null,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -232,18 +236,22 @@ class _DashboardPageState extends State<DashboardPage> {
                           Text("${user['nim']} • ${user['prodi']}", style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
                           const SizedBox(height: 8),
                           // Pill Target Lulus
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.track_changes_rounded, size: 14, color: Color(0xFF2B5CFA)),
-                                const SizedBox(width: 6),
-                                const Text("Target Lulus: Semester 8", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
-                                const SizedBox(width: 12),
-                                Text("Ubah", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF2B5CFA).withOpacity(0.8))),
-                              ],
+                          InkWell(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RoadmapPage(openFilter: true))),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.track_changes_rounded, size: 14, color: Color(0xFF2B5CFA)),
+                                  const SizedBox(width: 6),
+                                  const Text("Target Lulus: Semester 8", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                                  const SizedBox(width: 12),
+                                  Text("Ubah", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF2B5CFA).withOpacity(0.8))),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -356,24 +364,28 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           const SizedBox(height: 24),
                           // Alert Box Bawah
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(color: const Color(0xFF2B5CFA).withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.bar_chart_rounded, color: Color(0xFF2B5CFA), size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text("Kamu berada di jalur yang sesuai", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA))),
-                                      Text("Pertahankan progresmu!", style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-                                    ],
+                          InkWell(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProgressPage())),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(color: const Color(0xFF2B5CFA).withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.bar_chart_rounded, color: Color(0xFF2B5CFA), size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text("Kamu berada di jalur yang sesuai", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2B5CFA))),
+                                        Text("Pertahankan progresmu!", style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B5CFA), size: 16),
-                              ],
+                                  const Icon(Icons.chevron_right_rounded, color: Color(0xFF2B5CFA), size: 16),
+                                ],
+                              ),
                             ),
                           ),
                         ],

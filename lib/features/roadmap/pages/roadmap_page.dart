@@ -4,7 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
 class RoadmapPage extends StatefulWidget {
-  const RoadmapPage({super.key});
+  final bool openFilter;
+  const RoadmapPage({super.key, this.openFilter = false});
 
   @override
   State<RoadmapPage> createState() => _RoadmapPageState();
@@ -14,6 +15,16 @@ class _RoadmapPageState extends State<RoadmapPage> {
   final String uid = FirebaseAuth.instance.currentUser!.uid;
   int _targetSemester = 8;
   String _statusFilter = 'Semua';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.openFilter) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showFilterSheet(context);
+      });
+    }
+  }
 
   void _showFilterSheet(BuildContext context) {
     showModalBottomSheet(
