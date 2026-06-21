@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../auth/pages/login_page.dart';
 import '../../courses/pages/course_page.dart';
@@ -23,6 +24,73 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int _currentIndex = 0; // Buat state Bottom Navbar
+  int _unreadNotificationsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadNotificationsCount();
+  }
+
+  Future<void> _loadUnreadNotificationsCount() async {
+    final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+
+    int unread = 0;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final readIds = (prefs.getStringList('read_notifications_ids') ?? []).toSet();
+
+      // 1. Fetch DPA
+      final notesSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('pa_notes')
+          .get();
+      for (var doc in notesSnap.docs) {
+        final notifId = "dpa_${uid}_${doc.id}";
+        if (!readIds.contains(notifId)) {
+          unread++;
+        }
+      }
+
+      // 2. Fetch Low Grades
+      final coursesSnap = await FirebaseFirestore.instance
+          .collection('student_courses')
+          .doc(uid)
+          .collection('courses')
+          .get();
+      for (var doc in coursesSnap.docs) {
+        final data = doc.data();
+        final String status = data['status'] ?? '';
+        final String grade = data['nilai'] ?? '';
+        if (status == 'Lulus' && (grade == 'C' || grade == 'D' || grade == 'E')) {
+          final notifId = "warning_${uid}_${doc.id}";
+          if (!readIds.contains(notifId)) {
+            unread++;
+          }
+        }
+      }
+
+      // 3. Fallbacks
+      if (!readIds.contains("announcement_krs")) unread++;
+      if (!readIds.contains("announcement_system_update")) unread++;
+
+    } catch (e) {
+      debugPrint("Error counting unread notifications: $e");
+    }
+
+    if (mounted) {
+      setState(() {
+        _unreadNotificationsCount = unread;
+      });
+    }
+  }
+
+  void _navigateToNotifications() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPage()))
+        .then((_) => _loadUnreadNotificationsCount());
+  }
 
   // --- FUNGSI AMBIL DATA PROGRESS SEKALIGUS ---
   Future<Map<String, dynamic>> getProgressData() async {
@@ -170,16 +238,17 @@ class _DashboardPageState extends State<DashboardPage> {
             icon: Stack(
               children: [
                 const Icon(Icons.notifications_none_rounded, color: Color(0xFF1E293B), size: 28),
-                Positioned(
-                  right: 2, top: 2,
-                  child: Container(
-                    width: 10, height: 10,
-                    decoration: BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                if (_unreadNotificationsCount > 0)
+                  Positioned(
+                    right: 2, top: 2,
+                    child: Container(
+                      width: 10, height: 10,
+                      decoration: BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                    ),
                   ),
-                ),
               ],
             ),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPage())),
+            onPressed: _navigateToNotifications,
           ),
         ],
       ),
@@ -411,7 +480,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     _menuCard(context, "Roadmap Kelulusan", "Rencana perjalananmu\nsampai lulus", Icons.map_rounded, const Color(0xFF3B82F6), const Color(0xFF3B82F6).withOpacity(0.1), const RoadmapPage()),
                     _menuCard(context, "Rekomendasi Matkul", "Dapatkan rekomendasi\nmatkul terbaik", Icons.lightbulb_rounded, const Color(0xFFF59E0B), const Color(0xFFF59E0B).withOpacity(0.1), const RecommendationPage()),
                     _menuCard(context, "Konsultasi AI", "Tanya apapun seputar\nstudi ke AI", Icons.smart_toy_rounded, const Color(0xFFEC4899), const Color(0xFFEC4899).withOpacity(0.1), const AiChatPage()),
-                    _menuCard(context, "Konsultasi Dosen", "Catat jadwal & riwayat\nkonsultasi", Icons.calendar_month_rounded, const Color(0xFF14B8A6), const Color(0xFF14B8A6).withOpacity(0.1), const ConsultationPage()),
+                    _menuCard(context, "Kalender Jadwal", "Catat jadwal & riwayat\nkonsultasi", Icons.calendar_month_rounded, const Color(0xFF14B8A6), const Color(0xFF14B8A6).withOpacity(0.1), const ConsultationPage()),
                   ],
                 ),
                 const SizedBox(height: 30),
@@ -446,7 +515,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildNavButton(Icons.home_rounded, "Beranda", 0),
               _buildNavButton(Icons.calendar_today_rounded, "Kalender", 1),
               const SizedBox(width: 40), // Space buat FAB di tengah
-              _buildNavButton(Icons.notifications_none_rounded, "Notifikasi", 2, badge: "3"),
+              _buildNavButton(Icons.notifications_none_rounded, "Notifikasi", 2, badge: _unreadNotificationsCount > 0 ? _unreadNotificationsCount.toString() : null),
               _buildNavButton(Icons.person_outline_rounded, "Profil", 3),
             ],
           ),
@@ -466,7 +535,10 @@ class _DashboardPageState extends State<DashboardPage> {
               .then((_) => setState(() => _currentIndex = 0)); 
         } else if (index == 2) { // <-- UBAH BAGIAN INI
           Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPage()))
-              .then((_) => setState(() => _currentIndex = 0));
+              .then((_) {
+                setState(() => _currentIndex = 0);
+                _loadUnreadNotificationsCount();
+              });
         } else if (index == 3) { 
           Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()))
               .then((_) => setState(() => _currentIndex = 0));

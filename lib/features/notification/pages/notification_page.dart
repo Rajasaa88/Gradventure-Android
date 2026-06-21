@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -11,7 +12,49 @@ class NotificationPage extends StatefulWidget {
 
 class _NotificationPageState extends State<NotificationPage> {
   final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-  bool _allRead = false;
+  Set<String> _readIds = {};
+  List<Map<String, dynamic>> _lastFetched = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReadIds();
+  }
+
+  Future<void> _loadReadIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList('read_notifications_ids') ?? [];
+    if (mounted) {
+      setState(() {
+        _readIds = list.toSet();
+      });
+    }
+  }
+
+  Future<void> _markAllAsRead(List<Map<String, dynamic>> notifications) async {
+    final prefs = await SharedPreferences.getInstance();
+    final newRead = <String>[];
+    for (var notif in notifications) {
+      if (notif['id'] != null) {
+        newRead.add(notif['id']);
+      }
+    }
+    await prefs.setStringList('read_notifications_ids', newRead);
+    if (mounted) {
+      setState(() {
+        _readIds = newRead.toSet();
+      });
+    }
+  }
+
+  Future<void> _markSingleAsRead(String id) async {
+    if (_readIds.contains(id)) return;
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _readIds.add(id);
+    });
+    await prefs.setStringList('read_notifications_ids', _readIds.toList());
+  }
 
   Future<List<Map<String, dynamic>>> _fetchNotifications() async {
     if (uid.isEmpty) return [];
@@ -39,13 +82,15 @@ class _NotificationPageState extends State<NotificationPage> {
           creationTime = timestamp.toDate();
         }
 
+        final String notifId = "dpa_${uid}_${doc.id}";
         list.add({
+          "id": notifId,
           "title": "Bimbingan PA Dijadwalkan 📅",
           "message": "Topik: $topik. Pelaksanaan pada tanggal $tanggal pukul $waktu WIB. Jangan telat ya!",
           "time": _formatTimeAgo(creationTime),
           "icon": Icons.calendar_month_rounded,
           "color": const Color(0xFF2B5CFA), // Biru
-          "isRead": _allRead,
+          "isRead": _readIds.contains(notifId),
           "timestamp": creationTime,
         });
       }
@@ -65,13 +110,15 @@ class _NotificationPageState extends State<NotificationPage> {
 
         // Check if grade is low (C, D, or E)
         if (status == 'Lulus' && (grade == 'C' || grade == 'D' || grade == 'E')) {
+          final String notifId = "warning_${uid}_${doc.id}";
           list.add({
+            "id": notifId,
             "title": "Warning: Nilai Perlu Perbaikan ⚠️",
             "message": "Kamu dapet nilai $grade di mata kuliah $namaMatkul. Disarankan ambil ulang pas perbaikan IPK.",
             "time": "Peringatan Akademik",
             "icon": Icons.warning_rounded,
             "color": const Color(0xFFEF4444), // Merah untuk warning
-            "isRead": _allRead,
+            "isRead": _readIds.contains(notifId),
             "timestamp": DateTime.now().subtract(const Duration(hours: 1)),
           });
         }
@@ -81,29 +128,34 @@ class _NotificationPageState extends State<NotificationPage> {
     }
 
     // 3. Fallback/Mock notifications to keep it rich
+    final String krsId = "announcement_krs";
     list.add({
+      "id": krsId,
       "title": "KRS Semester Depan Dibuka 📝",
       "message": "Gas susun rencana studi lo! Kuota lo 24 SKS nih semester depan.",
       "time": "2 jam yang lalu",
       "icon": Icons.info_rounded,
       "color": const Color(0xFF10B981), // Ijo
-      "isRead": _allRead,
+      "isRead": _readIds.contains(krsId),
       "timestamp": DateTime.now().subtract(const Duration(hours: 2)),
     });
 
+    final String updateId = "announcement_system_update";
     list.add({
+      "id": updateId,
       "title": "Update Sistem Gradventure 🚀",
       "message": "Fitur AI Chat udah bisa lo pake buat curhat masalah akademik. Cobain sekarang!",
       "time": "3 hari yang lalu",
       "icon": Icons.auto_awesome_rounded,
       "color": const Color(0xFF8B5CF6), // Ungu
-      "isRead": true,
+      "isRead": _readIds.contains(updateId),
       "timestamp": DateTime.now().subtract(const Duration(days: 3)),
     });
 
     // Sort by timestamp
     list.sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
 
+    _lastFetched = list;
     return list;
   }
 
@@ -134,13 +186,14 @@ class _NotificationPageState extends State<NotificationPage> {
           IconButton(
             icon: const Icon(Icons.done_all_rounded, color: Color(0xFF2B5CFA)),
             tooltip: 'Tandai semua dibaca',
-            onPressed: () {
-              setState(() {
-                _allRead = true;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Semua notifikasi ditandai udah dibaca. 🧹")),
-              );
+            onPressed: () async {
+              if (_lastFetched.isNotEmpty) {
+                await _markAllAsRead(_lastFetched);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Semua notifikasi ditandai udah dibaca. 🧹")),
+                );
+              }
             },
           )
         ],
@@ -197,7 +250,9 @@ class _NotificationPageState extends State<NotificationPage> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(20),
                     onTap: () {
-                      // Handled tapping
+                      if (notif['id'] != null) {
+                        _markSingleAsRead(notif['id']);
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(16),
