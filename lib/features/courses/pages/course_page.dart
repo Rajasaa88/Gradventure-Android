@@ -21,14 +21,12 @@ class _CoursePageState extends State<CoursePage> {
     if (newGrade == 'Belum Diambil' || newGrade == 'E') {
       newStatus = 'Belum Diambil';
     } else if (newGrade == 'Sedang Ditempuh') {
-      newStatus = 'Sedang Ditempuh'; // <-- Status baru masuk sini
+      newStatus = 'Sedang Ditempuh';
     } else {
       newStatus = 'Lulus';
     }
 
     try {
-      // Kita pake .set() dengan merge: true. 
-      // Artinya: Kalo matkulnya belum ada di koper user, bakal DIBUAT. Kalo udah ada, bakal DIUPDATE.
       await FirebaseFirestore.instance
           .collection('student_courses')
           .doc(uid)
@@ -38,7 +36,6 @@ class _CoursePageState extends State<CoursePage> {
         'kode': masterData['kode'] ?? courseId,
         'nama': masterData['nama'] ?? 'Mata Kuliah',
         'sks': masterData['sks'] ?? 0,
-        // Antisipasi jaga-jaga kalo fieldnya bernama semester atau semester_tempuh
         'semester_tempuh': masterData['semester'] ?? masterData['semester_tempuh'] ?? selectedSemester,
         'nilai': newGrade,
         'status': newStatus,
@@ -84,7 +81,7 @@ class _CoursePageState extends State<CoursePage> {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D3142)),
               ),
               const SizedBox(height: 4),
-              Text("Pilih nilai akhir untuk matkul ini", style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+              Text("${masterData['kode'] ?? ''} • Pilih nilai / status", style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
               const SizedBox(height: 20),
               Wrap(
                 spacing: 12, runSpacing: 12,
@@ -121,188 +118,238 @@ class _CoursePageState extends State<CoursePage> {
       case 'C': return const Color(0xFFF59E0B); // Kuning
       case 'D':
       case 'E': return const Color(0xFFEF4444); // Merah
-      default: return Colors.grey.shade400;     // Abu-abu
+      case 'Sedang Ditempuh': return const Color(0xFF8B5CF6); // Ungu
+      default: return Colors.grey.shade400;     // Abu-abu (Belum Diambil / Rencana)
     }
+  }
+
+  // --- WIDGET TAB: DAFTAR MATKUL PRIBADI (AKTIF, SELESAI, RENCANA) ---
+  Widget _buildStudentCoursesTab(String targetStatus, String emptyMessage) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('student_courses').doc(uid).collection('courses').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF2B5CFA)));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text(emptyMessage, style: TextStyle(color: Colors.grey.shade500)));
+        }
+
+        // Filter berdasarkan status
+        var filteredDocs = snapshot.data!.docs.where((doc) {
+          var data = doc.data() as Map<String, dynamic>;
+          String status = data['status'] ?? 'Belum Diambil';
+          return status == targetStatus;
+        }).toList();
+
+        if (filteredDocs.isEmpty) {
+          return Center(child: Text(emptyMessage, style: TextStyle(color: Colors.grey.shade500)));
+        }
+
+        return ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: filteredDocs.length,
+          itemBuilder: (context, index) {
+            var doc = filteredDocs[index];
+            var data = doc.data() as Map<String, dynamic>;
+            String grade = data['nilai'] ?? 'Belum Diambil';
+            Color gradeColor = _getGradeColor(grade);
+
+            return _buildCourseCard(doc.id, data, grade, gradeColor);
+          },
+        );
+      },
+    );
+  }
+
+  // --- REUSABLE WIDGET: KARTU MATKUL ---
+  Widget _buildCourseCard(String courseId, Map<String, dynamic> data, String grade, Color gradeColor) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showGradePicker(context, courseId, data, grade),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: gradeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                  child: Icon(Icons.class_rounded, color: gradeColor),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data['nama'] ?? 'Mata Kuliah',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2D3142)),
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.api_rounded, size: 14, color: Colors.grey.shade500),
+                          const SizedBox(width: 4),
+                          Text(
+                            "${data['sks'] ?? 0} SKS",
+                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: gradeColor,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [BoxShadow(color: gradeColor.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 3))],
+                  ),
+                  child: Text(
+                    grade == 'Belum Diambil' ? 'Rencana' : (grade == 'Sedang Ditempuh' ? 'Aktif' : grade),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
-      appBar: AppBar(
-        title: const Text("Daftar Mata Kuliah", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF2D3142),
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          // --- FILTER SEMESTER CHIPS ---
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: List.generate(8, (index) {
-                  int sem = index + 1;
-                  bool isSelected = selectedSemester == sem;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () => setState(() => selectedSemester = sem),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF2B5CFA) : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isSelected ? const Color(0xFF2B5CFA) : Colors.grey.shade300, width: 1.5),
-                          boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF2B5CFA).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
-                        ),
-                        child: Text(
-                          "Semester $sem",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.grey.shade600),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
+    return DefaultTabController(
+      length: 4, // 4 Tab Menu
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F6F9),
+        appBar: AppBar(
+          title: const Text("Mata Kuliah", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF2D3142),
+          elevation: 0,
+          centerTitle: true,
+          bottom: TabBar(
+            isScrollable: true, // Biar muat 4 menu nggak sempit
+            labelColor: const Color(0xFF2B5CFA),
+            unselectedLabelColor: Colors.grey.shade500,
+            indicatorColor: const Color(0xFF2B5CFA),
+            indicatorWeight: 3,
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            tabs: const [
+              Tab(text: "Kurikulum"),
+              Tab(text: "Aktif"),
+              Tab(text: "Selesai"),
+              Tab(text: "Rencana"),
+            ],
           ),
-          const SizedBox(height: 12),
-
-          // --- LIST DATA MATKUL ---
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              // 1. NGAMBIL DARI GUDANG UTAMA (MASTER COURSES)
-              stream: FirebaseFirestore.instance.collection('courses').snapshots(),
-              builder: (context, masterSnapshot) {
-                if (masterSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFF2B5CFA)));
-                }
-
-                if (!masterSnapshot.hasData || masterSnapshot.data!.docs.isEmpty) {
-                  return Center(child: Text("Master data matkul belum ada nih.", style: TextStyle(color: Colors.grey.shade500)));
-                }
-
-                // 2. FILTER BERDASARKAN SEMESTER
-                var semesterCourses = masterSnapshot.data!.docs.where((doc) {
-                  var data = doc.data() as Map<String, dynamic>;
-                  // Ambil field semester atau semester_tempuh dari master
-                  int sem = int.tryParse(data['semester']?.toString() ?? data['semester_tempuh']?.toString() ?? '0') ?? 0;
-                  return sem == selectedSemester;
-                }).toList();
-
-                if (semesterCourses.isEmpty) {
-                  return Center(child: Text("Kosong nih di semester ini ✨", style: TextStyle(color: Colors.grey.shade500)));
-                }
-
-                return ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  itemCount: semesterCourses.length,
-                  itemBuilder: (context, index) {
-                    var masterCourse = semesterCourses[index];
-                    var masterData = masterCourse.data() as Map<String, dynamic>;
-
-                    // 3. CEK KOPER PRIBADI (STUDENT COURSES) BUAT TAU NILAINYA
-                    return StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('student_courses')
-                          .doc(uid)
-                          .collection('courses')
-                          .doc(masterCourse.id) // Nyocokin ID matkulnya
-                          .snapshots(),
-                      builder: (context, studentSnapshot) {
-                        
-                        // Default kalo dokumennya belum ada di koper
-                        String grade = 'Belum Diambil'; 
-
-                        // Kalo ketemu di koper, ambil nilainya
-                        if (studentSnapshot.hasData && studentSnapshot.data!.exists) {
-                          var studentData = studentSnapshot.data!.data() as Map<String, dynamic>;
-                          grade = studentData['nilai'] ?? 'Belum Diambil';
-                        }
-
-                        Color gradeColor = _getGradeColor(grade);
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [BoxShadow(color: Colors.grey.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(20),
-                              onTap: () => _showGradePicker(context, masterCourse.id, masterData, grade),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(color: gradeColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
-                                      child: Icon(Icons.class_rounded, color: gradeColor),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            masterData['nama'] ?? 'Mata Kuliah',
-                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF2D3142)),
-                                            maxLines: 2, overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              Icon(Icons.api_rounded, size: 14, color: Colors.grey.shade500),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                "${masterData['sks'] ?? 0} SKS",
-                                                style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: gradeColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [BoxShadow(color: gradeColor.withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 3))],
-                                      ),
-                                      child: Text(
-                                        grade == 'Belum Diambil' ? '-' : grade,
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+        ),
+        body: TabBarView(
+          children: [
+            // --- TAB 1: KURIKULUM EXPLORER (Kodingan asli lo) ---
+            Column(
+              children: [
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: List.generate(8, (index) {
+                        int sem = index + 1;
+                        bool isSelected = selectedSemester == sem;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: GestureDetector(
+                            onTap: () => setState(() => selectedSemester = sem),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? const Color(0xFF2B5CFA) : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: isSelected ? const Color(0xFF2B5CFA) : Colors.grey.shade300, width: 1.5),
+                                boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF2B5CFA).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                              ),
+                              child: Text(
+                                "Semester $sem",
+                                style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.grey.shade600),
                               ),
                             ),
                           ),
                         );
-                      },
-                    );
-                  },
-                );
-              },
+                      }),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('courses').snapshots(),
+                    builder: (context, masterSnapshot) {
+                      if (masterSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: Color(0xFF2B5CFA)));
+                      if (!masterSnapshot.hasData || masterSnapshot.data!.docs.isEmpty) return Center(child: Text("Master data matkul belum ada nih.", style: TextStyle(color: Colors.grey.shade500)));
+
+                      var semesterCourses = masterSnapshot.data!.docs.where((doc) {
+                        var data = doc.data() as Map<String, dynamic>;
+                        int sem = int.tryParse(data['semester']?.toString() ?? data['semester_tempuh']?.toString() ?? '0') ?? 0;
+                        return sem == selectedSemester;
+                      }).toList();
+
+                      if (semesterCourses.isEmpty) return Center(child: Text("Kosong nih di semester ini ✨", style: TextStyle(color: Colors.grey.shade500)));
+
+                      return ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        itemCount: semesterCourses.length,
+                        itemBuilder: (context, index) {
+                          var masterCourse = semesterCourses[index];
+                          var masterData = masterCourse.data() as Map<String, dynamic>;
+
+                          return StreamBuilder<DocumentSnapshot>(
+                            stream: FirebaseFirestore.instance.collection('student_courses').doc(uid).collection('courses').doc(masterCourse.id).snapshots(),
+                            builder: (context, studentSnapshot) {
+                              String grade = 'Belum Diambil'; 
+                              if (studentSnapshot.hasData && studentSnapshot.data!.exists) {
+                                var studentData = studentSnapshot.data!.data() as Map<String, dynamic>;
+                                grade = studentData['nilai'] ?? 'Belum Diambil';
+                              }
+                              Color gradeColor = _getGradeColor(grade);
+                              return _buildCourseCard(masterCourse.id, masterData, grade, gradeColor);
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+
+            // --- TAB 2, 3, 4: HASIL FILTER STATUS ---
+            _buildStudentCoursesTab('Sedang Ditempuh', 'Belum ada matkul aktif semester ini.'),
+            _buildStudentCoursesTab('Lulus', 'Belum ada matkul yang diselesaikan.'),
+            _buildStudentCoursesTab('Belum Diambil', 'Belum ada rencana studi tersimpan. Cek rekomendasi!'),
+          ],
+        ),
       ),
     );
   }

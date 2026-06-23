@@ -13,6 +13,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
   final String uid = FirebaseAuth.instance.currentUser!.uid;
 
   bool isLoading = true;
+  bool isSaving = false; // State baru buat loading pas neken tombol simpan
   double ipk = 0.0;
   int maxSks = 0;
   int usedSks = 0;
@@ -27,7 +28,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
     _fetchAndCalculateRecommendations();
   }
 
-  // Fungsi pembantu untuk konversi tipe data yang aman (handle null, String, int, double)
+  // Fungsi pembantu untuk konversi tipe data yang aman
   int _safeInt(dynamic value) {
     if (value == null) return 0;
     if (value is int) return value;
@@ -72,11 +73,10 @@ class _RecommendationPageState extends State<RecommendationPage> {
         String kode = data['kode'] ?? '';
         int sem = _safeInt(data['semester_tempuh']);
 
-        if (grade != 'Belum Diambil') {
-          if (sem > maxSemesterCompleted) maxSemesterCompleted = sem;
+        // --- PERBAIKAN LOGIKA: Hanya hitung IPK dari matkul yang BENAR-BENAR sudah keluar nilai hurufnya ---
+        if (grade != 'Belum Diambil' && grade != 'Sedang Ditempuh') {
           totalSksTaken += sks;
           totalBobot += (_getGradeWeight(grade) * sks);
-          takenCourseIds.add(doc.id);
 
           if (grade == 'D' || grade == 'E') {
             failedCourseIds.add(doc.id);
@@ -84,12 +84,18 @@ class _RecommendationPageState extends State<RecommendationPage> {
             passedCourseCodes.add(kode);
           }
         }
+
+        // Logika pelacakan semester & riwayat ambil matkul tetap berjalan normal untuk semua status aktif
+        if (grade != 'Belum Diambil') {
+          if (sem > maxSemesterCompleted) maxSemesterCompleted = sem;
+          takenCourseIds.add(doc.id);
+        }
       }
 
-      // Semester aktif yang akan ditempuh (misal lulus smt 2, maka sekarang menyusun smt 3)
+      // Semester aktif yang akan ditempuh (misal lulus/sedang smt 4, maka sekarang menyusun smt 5)
       currentStudentSemester = maxSemesterCompleted + 1;
 
-      // 2. Kalkulasi Beban SKS
+      // 2. Kalkulasi Beban SKS (Sekarang IPK-nya dijamin akurat kembali ke setelan pabrik)
       ipk = totalSksTaken > 0 ? (totalBobot / totalSksTaken) : 0.0;
       if (ipk >= 3.0) maxSks = 24;
       else if (ipk >= 2.5) maxSks = 21;
@@ -111,12 +117,11 @@ class _RecommendationPageState extends State<RecommendationPage> {
         if (takenCourseIds.contains(courseId) && !failedCourseIds.contains(courseId)) continue;
 
         // B. FILTER: Aturan Ganjil-Ganjil / Genap-Genap
-        // Pastikan paritas semester mata kuliah cocok dengan semester mahasiswa saat ini
         if (courseSemester != 0 && (courseSemester % 2 != currentStudentSemester % 2)) {
           continue;
         }
 
-        // C. FILTER: Batasan Semester 1 & 2 (Belum boleh ambil mata kuliah semester atas)
+        // C. FILTER: Batasan Semester 1 & 2
         if (currentStudentSemester < 3 && courseSemester > currentStudentSemester) {
           continue;
         }
@@ -185,13 +190,62 @@ class _RecommendationPageState extends State<RecommendationPage> {
         usedSks -= sks;
       } else {
         if (usedSks + sks > maxSks) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Batas SKS tercapai!")));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Batas SKS tercapai!"), backgroundColor: Colors.redAccent));
         } else {
           selectedCourseIds.add(courseId);
           usedSks += sks;
         }
       }
     });
+  }
+
+  // --- FUNGSI BARU BUAT NYIMPEN RENCANA STUDI ---
+  Future<void> _saveStudyPlan() async {
+    if (selectedCourseIds.isEmpty) return;
+
+    setState(() => isSaving = true);
+
+    try {
+      // Pake WriteBatch biar proses nulis ke Firestore-nya sekaligus (lebih cepat & efisien)
+      WriteBatch batch = FirebaseFirestore.instance.batch();
+      
+      for (var course in recommendedCourses) {
+        if (selectedCourseIds.contains(course['id'])) {
+          DocumentReference docRef = FirebaseFirestore.instance
+              .collection('student_courses')
+              .doc(uid)
+              .collection('courses')
+              .doc(course['id']);
+
+          // Masukin data matkul dengan status "Belum Diambil"
+          batch.set(docRef, {
+            'kode': course['kode'],
+            'nama': course['nama'],
+            'sks': course['sks'],
+            'semester': course['semester'], 
+            'status': 'Belum Diambil', 
+            'nilai': 'Belum Diambil',
+          }, SetOptions(merge: true));
+        }
+      }
+
+      await batch.commit();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Rencana studi berhasil disimpan! 🚀"), backgroundColor: Colors.green),
+      );
+
+      // Habis sukses nyimpen, balikin user ke halaman sebelumnya (Dashboard)
+      Navigator.pop(context);
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal menyimpan: $e"), backgroundColor: Colors.redAccent),
+      );
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
   }
 
   @override
@@ -351,18 +405,22 @@ class _RecommendationPageState extends State<RecommendationPage> {
     );
   }
 
+  // --- UI TOMBOL SIMPAN DI-UPDATE ---
   Widget _buildActionBottomBar() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Colors.black12))),
       child: ElevatedButton(
-        onPressed: selectedCourseIds.isEmpty ? null : () {},
+        // Tombol bakal disabled kalo gak ada matkul yang dipilih ATAU lagi proses nyimpen
+        onPressed: (selectedCourseIds.isEmpty || isSaving) ? null : _saveStudyPlan,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text("Simpan Rencana Studi", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        child: isSaving
+            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Text("Simpan Rencana Studi", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
